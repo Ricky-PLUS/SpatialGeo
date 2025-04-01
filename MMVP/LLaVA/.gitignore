@@ -27,3 +27,8 @@ ckpts*
 
 .ipynb_checkpoints
 *.ipynb
+
+# model
+*.pt
+MMVP_Model
+MMVP
