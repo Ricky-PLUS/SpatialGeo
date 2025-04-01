@@ -105,21 +105,22 @@ def eval_model(args):
         photo_id = index+1
         image_path = os.path.join(args.directory, 'MMVP Images', f"{photo_id}.jpg")
 
-        pil_image = Image.open(image_path).convert('RGB')
-        input_array = np.array(pil_image, dtype=np.float32)
+        # # dino(moge)部分的image processor
+        # pil_image = Image.open(image_path).convert('RGB')
+        # input_array = np.array(pil_image, dtype=np.float32)
 
-        input_image = torch.tensor(input_array / 255.0, 
-                                dtype=torch.float32,
-                                device=model.device).permute(2, 0, 1)  # HWC -> CHW
+        # input_image = torch.tensor(input_array / 255.0, 
+        #                         dtype=torch.float32,
+        #                         device=model.device).permute(2, 0, 1)  # HWC -> CHW
 
-        image_tensor = process_images_(input_image, model.device)
+        # image_tensor = process_images_(input_image, model.device)
 
-        # image = Image.open(image_path)
-        # image_tensor = process_images([image], image_processor, args)
-        # if type(image_tensor) is list:
-        #     image_tensor = [image.to(model.device, dtype=torch.float16) for image in image_tensor]
-        # else:
-        #     image_tensor = image_tensor.to(model.device, dtype=torch.float16)
+        image = Image.open(image_path)
+        image_tensor = process_images([image], image_processor, args)
+        if type(image_tensor) is list:
+            image_tensor = [image.to(model.device, dtype=torch.float16) for image in image_tensor]
+        else:
+            image_tensor = image_tensor.to(model.device, dtype=torch.float16)
         
         
         input_ids = tokenizer_image_token(prompt, tokenizer, IMAGE_TOKEN_INDEX, return_tensors='pt').unsqueeze(0).cuda()
