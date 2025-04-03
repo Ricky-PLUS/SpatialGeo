@@ -10,7 +10,9 @@ import torch.nn.functional as F
 import torch.utils
 import torch.utils.checkpoint
 import torch.version
-from huggingface_hub import hf_hub_download
+import torch.nn.functional as F
+import numpy as np
+from PIL import Image
 
 from .utils import wrap_dinov2_attention_with_sdpa, wrap_module_with_gradient_checkpointing
 
@@ -21,21 +23,20 @@ class MoGeModel(nn.Module):
 
     def __init__(self, 
         encoder: str = 'dinov2_vitl14', 
-        intermediate_layers: Union[int, List[int]] = 4,
+        intermediate_layers: Union[int, List[int]] = 1,
         trained_area_range: Tuple[Number, Number] = (500 * 500, 700 * 700),
+        delay_load=False
     ):
         super(MoGeModel, self).__init__()
 
         self.encoder = encoder
         self.intermediate_layers = intermediate_layers
         self.trained_area_range = trained_area_range
-
+        self.is_loaded = False
         
         import pdb
         pdb.set_trace()
         
-        # NOTE: We have copied the DINOv2 code in torchhub to this repository.
-        # Minimal modifications have been made: removing irrelevant code, unnecessary warnings and fixing importing issues.
         hub_loader = getattr(importlib.import_module(".dinov2.hub.backbones", __package__), encoder)
         self.backbone = hub_loader(pretrained=False)
         
@@ -45,27 +46,22 @@ class MoGeModel(nn.Module):
         self.register_buffer("image_mean", image_mean)
         self.register_buffer("image_std", image_std)
         
+        if not delay_load:
+            self.load_model()
+        
         if torch.__version__ >= '2.0':
             self.enable_pytorch_native_sdpa()
 
-    @classmethod
-    def from_pretrained(cls, pretrained_model_name_or_path: Union[str, Path, IO[bytes]]) -> 'MoGeModel':
-        
+    def load_model(self, pretrained_model_name_or_path: Union[str, Path, IO[bytes]] = "./vit_model.pt"):
         import pdb
         pdb.set_trace()
         if Path(pretrained_model_name_or_path).exists():
             checkpoint = torch.load(pretrained_model_name_or_path, map_location='cpu', weights_only=True)
-        else:
-            cached_checkpoint_path = hf_hub_download(
-                repo_id=pretrained_model_name_or_path,
-                repo_type="model",
-                filename="model.pt",
-            )
-            checkpoint = torch.load(cached_checkpoint_path, map_location='cpu', weights_only=True)
             
-        model = cls()
-        model.backbone.load_state_dict(checkpoint, strict=False)
-        return model
+        self.backbone.load_state_dict(checkpoint, strict=False)
+        self.backbone.requires_grad_(False)
+        
+        self.is_loaded = True
 
     @staticmethod
     def cache_pretrained_backbone(encoder: str, pretrained: bool):
@@ -83,50 +79,81 @@ class MoGeModel(nn.Module):
     def enable_pytorch_native_sdpa(self):
         for i in range(len(self.backbone.blocks)):
             self.backbone.blocks[i].attn = wrap_dinov2_attention_with_sdpa(self.backbone.blocks[i].attn)
+            
+    def process_image_(self, image: torch.Tensor, device):
+        """
+        moge处理image_tensor的方法
 
-    def forward(self, image: torch.Tensor, mixed_precision: bool = False) -> Dict[str, torch.Tensor]:
+        Args:
+            image: torch.Tensor
+
+        Returns:
+            image_14: image的w和h经过处理后，均为14的倍数。
+        """
+        
+        if image.dim() == 3:
+            image = image.unsqueeze(0)        
+
+        original_height, original_width = image.shape[-2:]
+        area = original_height * original_width
+
+        expected_area = 500000
+
+        if expected_area != area:
+            expected_width, expected_height = int(original_width * (expected_area / area) ** 0.5), int(original_height * (expected_area / area) ** 0.5)
+            image = F.interpolate(image, (expected_height, expected_width), mode="bicubic", align_corners=False, antialias=True)
+            
         raw_img_h, raw_img_w = image.shape[-2:]
         patch_h, patch_w = raw_img_h // 14, raw_img_w // 14
 
         image = (image - self.image_mean) / self.image_std
 
-        import pdb
-        pdb.set_trace()
-    
-        # Apply image transformation for DINOv2
         image_14 = F.interpolate(image, (patch_h * 14, patch_w * 14), mode="bilinear", align_corners=False, antialias=True)
+        
+        return image_14
+    
+          
+    def processor_moge(self, image):
+        """
+        将moge的processor集成（旧版的process过程较为分散） 
+        
+        args:
+            image:如果为路径，则读取图片。否则直接处理。
+        
+        return：dino(moge)_encoder的input
+        
+        """
+        device_moge = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        
+        if isinstance(image, str):
+            # dino(moge)部分的image processor
+
+            pil_image = Image.open(image).convert('RGB')
+            input_array = np.array(pil_image, dtype=np.float32)
+
+            image = torch.tensor(input_array / 255.0, 
+                                    dtype=torch.float32,
+                                    device=device_moge).permute(2, 0, 1)  # HWC -> CHW
+        
+        image = image.unsqueeze(0)
+        image_tensor = self.process_image_(image, device_moge)
+
+        return image_tensor
+    
+
+    @torch.no_grad()
+    def forward(self, image: torch.Tensor, mixed_precision: bool = False) -> Dict[str, torch.Tensor]:
+        image_14 = self.processor_moge(image)
 
         # Get intermediate layers from the backbone
         with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=mixed_precision):
             features = self.backbone.get_intermediate_layers(image_14, self.intermediate_layers, return_class_token=False)
 
         return features
-
-    @torch.inference_mode()
-    def infer(
-        self, 
-        image: torch.Tensor, 
-        resolution_level: int = 9,
-    ) -> Dict[str, torch.Tensor]:
-
-        image = image.unsqueeze(0)
-
-        import pdb
-        pdb.set_trace()
-
-        original_height, original_width = image.shape[-2:]
-        area = original_height * original_width
-
-        min_area, max_area = self.trained_area_range
-        expected_area = min_area + (max_area - min_area) * (resolution_level / 9)
-        expected_area = expected_area * 2
-        
-        if expected_area != area:
-            expected_width, expected_height = int(original_width * (expected_area / area) ** 0.5), int(original_height * (expected_area / area) ** 0.5)
-            image = F.interpolate(image, (expected_height, expected_width), mode="bicubic", align_corners=False, antialias=True)
-        
-        features = self.forward(image)
-        
-        return features
+    
+    @property
+    def hidden_size(self):
+        #return self.config.hidden_size
+        return 1024
 
 

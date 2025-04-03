@@ -29,18 +29,27 @@ class LlavaMetaModel:
     def __init__(self, config):
         super(LlavaMetaModel, self).__init__(config)
 
+        # 修改
         if hasattr(config, "mm_vision_tower"):
             self.vision_tower = build_vision_tower(config, load_model = "clip", delay_load=True)
             self.dino_tower = build_vision_tower(config, load_model = "dino", delay_load=True)
+            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True)
 
             self.mm_projector = build_vision_projector(config)
             self.dino_mm_projector = build_vision_projector(config)
+            self.moge_mm_projector = build_vision_projector(config)
 
 
-
+    # 修改
     def get_vision_tower(self, load_model = "clip"):
         if load_model == "clip":
             vision_tower = getattr(self, 'vision_tower', None)
+            if type(vision_tower) is list:
+                vision_tower = vision_tower[0]
+
+            return vision_tower
+        elif load_model == "moge":
+            vision_tower = getattr(self, "moge_tower", None)
             if type(vision_tower) is list:
                 vision_tower = vision_tower[0]
 
@@ -52,12 +61,15 @@ class LlavaMetaModel:
 
             return vision_tower
 
+    # 修改
     def initialize_vision_modules(self, model_args, fsdp=None):
         vision_tower = model_args.vision_tower
         mm_vision_select_layer = model_args.mm_vision_select_layer
         mm_vision_select_feature = model_args.mm_vision_select_feature
         pretrain_mm_mlp_adapter = model_args.pretrain_mm_mlp_adapter
+        pretrain_moge_mm_mlp_adapter = model_args.pretrain_moge_mm_mlp_adapter
         pretrain_dino_mm_mlp_adapter = model_args.pretrain_dino_mm_mlp_adapter
+        
 
         self.config.mm_vision_tower = vision_tower
 
@@ -74,6 +86,20 @@ class LlavaMetaModel:
             else:
                 vision_tower = self.vision_tower
             vision_tower.load_model()
+        
+        if self.get_vision_tower(load_model = "moge") is None:
+            moge_tower = build_vision_tower(load_model="moge")
+
+            if fsdp is not None and len(fsdp) > 0:
+                self.moge_tower = [moge_tower]
+            else:
+                self.moge_tower = moge_tower
+        else:
+            if fsdp is not None and len(fsdp) > 0:
+                moge_tower = self.moge_tower[0]
+            else:
+                moge_tower = self.moge_tower
+            moge_tower.load_model()
 
 
         if self.get_vision_tower(load_model = "dino") is None:
@@ -100,6 +126,9 @@ class LlavaMetaModel:
 
         if getattr(self, 'mm_projector', None) is None:
             self.mm_projector = build_vision_projector(self.config)
+            
+        if getattr(self, 'moge_mm_projector', None) is None:
+            self.moge_mm_projector = build_vision_projector(self.config)
 
         if getattr(self, 'dino_mm_projector', None) is None:
             self.dino_mm_projector = build_vision_projector(self.config)
@@ -110,6 +139,15 @@ class LlavaMetaModel:
                 return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
 
             self.mm_projector.load_state_dict(get_w(mm_projector_weights, 'mm_projector'))
+
+        if pretrain_moge_mm_mlp_adapter is not None:
+
+            print("Loading pretrained moge adpater!!!")
+            moge_mm_projector_weights = torch.load(pretrain_moge_mm_mlp_adapter, map_location='cpu')
+            def get_w(weights, keyword):
+                return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
+
+            self.moge_mm_projector.load_state_dict(get_w(moge_mm_projector_weights, 'moge_mm_projector'))
 
         if pretrain_dino_mm_mlp_adapter is not None:
 
@@ -129,6 +167,9 @@ class LlavaMetaForCausalLM(ABC):
 
     def get_vision_tower(self):
         return self.get_model().get_vision_tower()
+    
+    def get_moge_vision_tower(self):
+        return self.get_model().get_vision_tower(load_model = "moge")
 
     def get_dino_vision_tower(self):
         return self.get_model().get_vision_tower(load_model = "dino")
@@ -143,6 +184,10 @@ class LlavaMetaForCausalLM(ABC):
         image_features_clip = self.get_model().mm_projector(image_features_clip)
         return image_features_clip
 
+    def encode_images_withmoge(self, images):
+        image_features_moge = self.get_model().get_vision_tower(load_model = "moge")(images)
+        image_features_moge = self.get_model().moge_mm_projector(image_features_moge)
+        return image_features_moge
 
     def encode_images_withdino(self, images):
         image_features_dino = self.get_model().get_vision_tower(load_model = "dino")(images)
@@ -150,6 +195,7 @@ class LlavaMetaForCausalLM(ABC):
         return image_features_dino
 
 
+    # 修改！！！
     def prepare_inputs_labels_for_multimodal_withdino(
         self, input_ids, attention_mask, past_key_values, labels, images
     ):

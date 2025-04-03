@@ -141,6 +141,10 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
 
         vision_tower.to(device=device, dtype=torch.float16)
 
+        moge_vision_tower = model.get_moge_vision_tower()
+        if not moge_vision_tower.is_loaded:
+            moge_vision_tower.load_model()
+        moge_vision_tower.to(device='cuda', dtype=torch.float16)
 
         dino_vision_tower = model.get_dino_vision_tower()
         if not dino_vision_tower.is_loaded:
