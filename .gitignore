@@ -31,4 +31,15 @@ ckpts*
 # model
 *.pt
 MMVP_Model
-MMVP
+
+# eval
+MMVP_eval
+
+# dataset
+dataset/
+
+# DevContainer
+!.devcontainer/*
+
+# Demo
+serve_images/

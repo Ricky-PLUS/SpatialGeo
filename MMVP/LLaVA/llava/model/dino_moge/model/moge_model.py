@@ -5,16 +5,12 @@ import importlib
 
 import torch
 import torch.nn as nn
-import torch.nn.init as init
-import torch.nn.functional as F
-import torch.utils
-import torch.utils.checkpoint
-import torch.version
 import torch.nn.functional as F
 import numpy as np
 from PIL import Image
+from transformers import CLIPVisionConfig
 
-from .utils import wrap_dinov2_attention_with_sdpa, wrap_module_with_gradient_checkpointing
+from .utils import wrap_dinov2_attention_with_sdpa
 
 
 class MoGeModel(nn.Module):
@@ -22,6 +18,7 @@ class MoGeModel(nn.Module):
     image_std: torch.Tensor
 
     def __init__(self, 
+        dtype, device, config, 
         encoder: str = 'dinov2_vitl14', 
         intermediate_layers: Union[int, List[int]] = 1,
         trained_area_range: Tuple[Number, Number] = (500 * 500, 700 * 700),
@@ -33,53 +30,48 @@ class MoGeModel(nn.Module):
         self.intermediate_layers = intermediate_layers
         self.trained_area_range = trained_area_range
         self.is_loaded = False
-        
-        import pdb
-        pdb.set_trace()
+        self.Dtype = dtype
+        self.Device = device
+        self.Config = config
         
         hub_loader = getattr(importlib.import_module(".dinov2.hub.backbones", __package__), encoder)
         self.backbone = hub_loader(pretrained=False)
         
-        image_mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
-        image_std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
+        self.image_mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to('cuda:0')
+        self.image_std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to('cuda:0')
 
-        self.register_buffer("image_mean", image_mean)
-        self.register_buffer("image_std", image_std)
         
         if not delay_load:
             self.load_model()
-        
+        else:
+            self.cfg_only = CLIPVisionConfig.from_pretrained(self.vision_tower_name)
+
         if torch.__version__ >= '2.0':
             self.enable_pytorch_native_sdpa()
 
-    def load_model(self, pretrained_model_name_or_path: Union[str, Path, IO[bytes]] = "./vit_model.pt"):
-        import pdb
-        pdb.set_trace()
-        if Path(pretrained_model_name_or_path).exists():
-            checkpoint = torch.load(pretrained_model_name_or_path, map_location='cpu', weights_only=True)
-            
+    def load_model(self, pretrained_model_name_or_path: Union[str, Path, IO[bytes]] = "/work/home/scnjmvwig3/MyCode/MMVP/LLaVA/llava/model/dino_moge/vit_model.pt"):
+        
+        path = Path(pretrained_model_name_or_path)
+        if not path.exists():
+            raise FileNotFoundError(f"error path: {path}")
+
+        checkpoint = torch.load(
+            pretrained_model_name_or_path, 
+            map_location='cpu', 
+            weights_only=True  
+        )
+
         self.backbone.load_state_dict(checkpoint, strict=False)
         self.backbone.requires_grad_(False)
-        
+        self.backbone = self.backbone.to(device='cuda:0')
+
         self.is_loaded = True
-
-    @staticmethod
-    def cache_pretrained_backbone(encoder: str, pretrained: bool):
-        _ = torch.hub.load('facebookresearch/dinov2', encoder, pretrained=pretrained)
-
-    def load_pretrained_backbone(self):
-        "Load the backbone with pretrained dinov2 weights from torch hub"
-        state_dict = torch.hub.load('facebookresearch/dinov2', self.encoder, pretrained=True).state_dict()
-        self.backbone.load_state_dict(state_dict)
-    
-    def enable_backbone_gradient_checkpointing(self):
-        for i in range(len(self.backbone.blocks)):
-            self.backbone.blocks[i] = wrap_module_with_gradient_checkpointing(self.backbone.blocks[i])
 
     def enable_pytorch_native_sdpa(self):
         for i in range(len(self.backbone.blocks)):
             self.backbone.blocks[i].attn = wrap_dinov2_attention_with_sdpa(self.backbone.blocks[i].attn)
             
+    # DINOv2的处理方式
     def process_image_(self, image: torch.Tensor, device):
         """
         moge处理image_tensor的方法
@@ -112,7 +104,7 @@ class MoGeModel(nn.Module):
         
         return image_14
     
-          
+    # DINOv2的处理方式
     def processor_moge(self, image):
         """
         将moge的processor集成（旧版的process过程较为分散） 
@@ -139,21 +131,39 @@ class MoGeModel(nn.Module):
         image_tensor = self.process_image_(image, device_moge)
 
         return image_tensor
-    
 
     @torch.no_grad()
-    def forward(self, image: torch.Tensor, mixed_precision: bool = False) -> Dict[str, torch.Tensor]:
-        image_14 = self.processor_moge(image)
-
+    def forward(self, image_14: torch.Tensor) -> Dict[str, torch.Tensor]:
+        # image_14 = self.processor_moge(image_14, device=self.device)
+        # import pdb
+        # pdb.set_trace()
+        
         # Get intermediate layers from the backbone
-        with torch.autocast(device_type='cuda', dtype=torch.float16, enabled=mixed_precision):
-            features = self.backbone.get_intermediate_layers(image_14, self.intermediate_layers, return_class_token=False)
-
+        features = self.backbone.get_intermediate_layers(image_14.to(device=self.device, dtype=self.dtype), self.intermediate_layers, return_class_token=False)
+        features = features[0].to(image_14.dtype)
+            
         return features
+    
+    @property
+    def dummy_feature(self):
+        return torch.zeros(1, self.hidden_size, device=self.device, dtype=self.dtype)
+
+    @property
+    def dtype(self):
+        return self.Dtype
+
+    @property
+    def device(self):
+        return self.Device
+
+    @property
+    def config(self):
+        if self.is_loaded:
+            return self.Config
+        else:
+            return self.cfg_only
     
     @property
     def hidden_size(self):
         #return self.config.hidden_size
         return 1024
-
-

@@ -32,8 +32,8 @@ class LlavaMetaModel:
         # 修改
         if hasattr(config, "mm_vision_tower"):
             self.vision_tower = build_vision_tower(config, load_model = "clip", delay_load=True)
-            self.dino_tower = build_vision_tower(config, load_model = "dino", delay_load=True)
-            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True)
+            self.dino_tower = build_vision_tower(config, load_model = "dino", delay_load=True,dtype=self.vision_tower.dtype, device=self.vision_tower.device,config=self.vision_tower.config)
+            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True,dtype=self.vision_tower.dtype, device=self.vision_tower.device,config=self.vision_tower.config)
 
             self.mm_projector = build_vision_projector(config)
             self.dino_mm_projector = build_vision_projector(config)
@@ -216,6 +216,7 @@ class LlavaMetaForCausalLM(ABC):
             image_features = [x.flatten(0, 1) for x in image_features]
         else:
             image_features_clip = self.encode_images_withclip(images)
+            image_features_moge = self.encode_images_withmoge(images)
             image_features_dino = self.encode_images_withdino(images)
 
 
@@ -250,6 +251,7 @@ class LlavaMetaForCausalLM(ABC):
             while image_token_indices.numel() > 0:
 
                 cur_image_features_clip = image_features_clip[cur_image_idx]
+                cur_image_features_moge = image_features_moge[cur_image_idx]
                 cur_image_features_dino = image_features_dino[cur_image_idx]
 
                 image_token_start = image_token_indices[0]
@@ -272,15 +274,17 @@ class LlavaMetaForCausalLM(ABC):
 
 
                     # Interleave features
-                    merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
-                    merged_features[0::2] = cur_image_features_clip
-                    merged_features[1::2] = cur_image_features_dino
+                    merged_features = torch.empty(3*num_patches, clip_dim, dtype = clip_dtype)
+                    merged_features[0::3] = cur_image_features_clip
+                    merged_features[1::3] = cur_image_features_dino
+                    merged_features[2::3] = cur_image_features_moge
 
                     cur_new_input_embeds.append(merged_features)
 
                     if labels is not None:
                         cur_new_labels.append(cur_labels[:image_token_start])
                         cur_new_labels.append(torch.full((cur_image_features_clip.shape[0],), IGNORE_INDEX, device=labels.device, dtype=labels.dtype))
+                        cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=labels.device, dtype=labels.dtype))
                         cur_new_labels.append(torch.full((cur_image_features_dino.shape[0],), IGNORE_INDEX, device=labels.device, dtype=labels.dtype))
                         cur_labels = cur_labels[image_token_start+1:]
                 cur_image_idx += 1

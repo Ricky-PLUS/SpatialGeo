@@ -822,6 +822,7 @@ def train():
             model = LlavaLlamaForCausalLM.from_pretrained( # 按照pre和fine此时还没有vision tower
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
+                torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
                 **bnb_model_from_pretrained_args
             )
     else:

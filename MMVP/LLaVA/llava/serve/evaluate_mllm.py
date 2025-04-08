@@ -163,7 +163,6 @@ def eval_model(args):
     ans_file.close()
 
             
-
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
     parser.add_argument("--model-path", type=str, default="/root/private_data/MyCode/MMVP/LLaVA/MMVP_Model/based-llava-1.5-13b")

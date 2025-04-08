@@ -1,1 +1,1 @@
-MMVP-Improved: 基于 MMVP 的空间型多模态视觉语言模型
+SpatialVLM: 基于 LLAVA 的空间型多模态视觉语言模型

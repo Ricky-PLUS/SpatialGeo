@@ -1,15 +1,16 @@
 import torch
 import torch.nn as nn
 
-from transformers import CLIPVisionModel, CLIPImageProcessor, CLIPVisionConfig
-from transformers import AutoImageProcessor, AutoModel, AutoConfig
+from transformers import CLIPImageProcessor, CLIPVisionConfig
 
 class DINOVisionTower(nn.Module):
-    def __init__(self, vision_tower, args, delay_load=False):
+    def __init__(self, vision_tower, args, dtype, device, config, delay_load=False):
         super().__init__()
-
-
+        
         self.is_loaded = False
+        self.Dtype = dtype
+        self.Device = device
+        self.Config = config
 
         self.vision_tower_name = vision_tower
         self.select_layer = args.mm_vision_select_layer
@@ -24,8 +25,6 @@ class DINOVisionTower(nn.Module):
 
     def load_model(self):
         self.image_processor = CLIPImageProcessor.from_pretrained(self.vision_tower_name)
-
-        self.clip_vision_tower = CLIPVisionModel.from_pretrained(self.vision_tower_name)
 
         self.vision_tower = torch.hub.load('facebookresearch/dinov2', 'dinov2_vitl14')
 
@@ -63,16 +62,16 @@ class DINOVisionTower(nn.Module):
 
     @property
     def dtype(self):
-        return self.clip_vision_tower.dtype
+        return self.Dtype
 
     @property
     def device(self):
-        return self.clip_vision_tower.device
+        return self.Device
 
     @property
     def config(self):
         if self.is_loaded:
-            return self.clip_vision_tower.config
+            return self.Config
         else:
             return self.cfg_only
 
