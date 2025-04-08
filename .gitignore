@@ -31,6 +31,7 @@ ckpts*
 # model
 *.pt
 MMVP_Model
+llavamodel
 
 # eval
 MMVP_eval
