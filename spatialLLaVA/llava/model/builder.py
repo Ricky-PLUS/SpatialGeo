@@ -97,6 +97,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                 tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
                 cfg_pretrained = AutoConfig.from_pretrained(model_path)
                 model = LlavaLlamaForCausalLM.from_pretrained(model_base, low_cpu_mem_usage=True, config=cfg_pretrained, **kwargs)
+                print("model_based")
             file_path = "/root/private_data/MyCode/spatialLLaVA/checkpoints/llava-v1.6-7b-moge_projector/moge_mm_projector.bin"
             if not os.path.isfile(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
