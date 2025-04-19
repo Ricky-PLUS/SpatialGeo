@@ -59,6 +59,7 @@ class ModelArguments:
     vision_tower: Optional[str] = field(default=None)
     mm_vision_select_layer: Optional[int] = field(default=-1)   # default to the last layer
     pretrain_mm_mlp_adapter: Optional[str] = field(default=None)
+    pretrain_moge_mm_mlp_adapter: Optional[str] = field(default=None)
     mm_projector_type: Optional[str] = field(default='linear')
     mm_use_im_start_end: bool = field(default=False)
     mm_use_im_patch_token: bool = field(default=True)
@@ -166,6 +167,7 @@ def get_mm_adapter_state_maybe_zero_3(named_params, keys_to_match):
     return to_return
 
 
+# lora修改，如果采用lora，这部分需要修改（"vision_tower"应该只包括clip，对于moge需要添加。)
 def find_all_linear_names(model):
     cls = torch.nn.Linear
     lora_module_names = set()
@@ -181,14 +183,31 @@ def find_all_linear_names(model):
         lora_module_names.remove('lm_head')
     return list(lora_module_names)
 
-
+# 修改
 def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
                                    output_dir: str):
     """Collects the state dict and dump to disk."""
 
     if getattr(trainer.args, "tune_mm_mlp_adapter", False):
         # Only save Adapter
-        keys_to_match = ['mm_projector']
+        # keys_to_match = ['mm_projector']
+        # if getattr(trainer.args, "use_im_start_end", False):
+        #     keys_to_match.extend(['embed_tokens', 'embed_in'])
+
+        # weight_to_save = get_mm_adapter_state_maybe_zero_3(trainer.model.named_parameters(), keys_to_match)
+        # trainer.model.config.save_pretrained(output_dir)
+
+        # current_folder = output_dir.split('/')[-1]
+        # parent_folder = os.path.dirname(output_dir)
+        # if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
+        #     if current_folder.startswith('checkpoint-'):
+        #         mm_projector_folder = os.path.join(parent_folder, "mm_projector")
+        #         os.makedirs(mm_projector_folder, exist_ok=True)
+        #         torch.save(weight_to_save, os.path.join(mm_projector_folder, f'{current_folder}.bin'))
+        #     else:
+        #         torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
+
+        keys_to_match = ['moge_mm_projector']
         if getattr(trainer.args, "use_im_start_end", False):
             keys_to_match.extend(['embed_tokens', 'embed_in'])
 
@@ -199,11 +218,11 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         parent_folder = os.path.dirname(output_dir)
         if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
             if current_folder.startswith('checkpoint-'):
-                mm_projector_folder = os.path.join(parent_folder, "mm_projector")
+                mm_projector_folder = os.path.join(parent_folder, "moge_mm_projector")
                 os.makedirs(mm_projector_folder, exist_ok=True)
                 torch.save(weight_to_save, os.path.join(mm_projector_folder, f'{current_folder}.bin'))
             else:
-                torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
+                torch.save(weight_to_save, os.path.join(output_dir, f'moge_mm_projector.bin'))
         return
 
     if trainer.deepspeed:
@@ -795,6 +814,8 @@ def train(attn_implementation=None):
     compute_dtype = (torch.float16 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
 
     bnb_model_from_pretrained_args = {}
+    
+    # false
     if training_args.bits in [4, 8]:
         from transformers import BitsAndBytesConfig
         bnb_model_from_pretrained_args.update(dict(
@@ -823,7 +844,7 @@ def train(attn_implementation=None):
                 cache_dir=training_args.cache_dir,
                 **bnb_model_from_pretrained_args
             )
-        else:
+        else: # true
             model = LlavaLlamaForCausalLM.from_pretrained(
                 model_args.model_name_or_path,
                 cache_dir=training_args.cache_dir,
@@ -839,16 +860,20 @@ def train(attn_implementation=None):
             torch_dtype=(torch.bfloat16 if training_args.bf16 else None),
             **bnb_model_from_pretrained_args
         )
+
     model.config.use_cache = False
 
+    # false
     if model_args.freeze_backbone:
         model.model.requires_grad_(False)
-
+        
+    # false
     if training_args.bits in [4, 8]:
         from peft import prepare_model_for_kbit_training
         model.config.torch_dtype=(torch.float32 if training_args.fp16 else (torch.bfloat16 if training_args.bf16 else torch.float32))
         model = prepare_model_for_kbit_training(model, use_gradient_checkpointing=training_args.gradient_checkpointing)
 
+    # true
     if training_args.gradient_checkpointing:
         if hasattr(model, "enable_input_require_grads"):
             model.enable_input_require_grads()
@@ -857,6 +882,7 @@ def train(attn_implementation=None):
                 output.requires_grad_(True)
             model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
+    # false
     if training_args.lora_enable:
         from peft import LoraConfig, get_peft_model
         lora_config = LoraConfig(
@@ -882,7 +908,7 @@ def train(attn_implementation=None):
             model_max_length=training_args.model_max_length,
             padding_side="right"
         )
-    else:
+    else: # true
         tokenizer = transformers.AutoTokenizer.from_pretrained(
             model_args.model_name_or_path,
             cache_dir=training_args.cache_dir,
@@ -923,26 +949,38 @@ def train(attn_implementation=None):
         model.config.tokenizer_padding_side = tokenizer.padding_side
         model.config.tokenizer_model_max_length = tokenizer.model_max_length
 
+        # 修改
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
         if model_args.tune_mm_mlp_adapter:
             model.requires_grad_(False)
-            for p in model.get_model().mm_projector.parameters():
+            # for p in model.get_model().mm_projector.parameters():
+            #     p.requires_grad = True
+                
+            for p in model.get_model().moge_mm_projector.parameters():
                 p.requires_grad = True
 
+        # false
         model.config.freeze_mm_mlp_adapter = training_args.freeze_mm_mlp_adapter
         if training_args.freeze_mm_mlp_adapter:
             for p in model.get_model().mm_projector.parameters():
                 p.requires_grad = False
 
+            for p in model.get_model().moge_mm_projector.parameters():
+                p.requires_grad = False
+
+        # false
         if training_args.bits in [4, 8]:
             model.get_model().mm_projector.to(dtype=compute_dtype, device=training_args.device)
+            model.get_model().moge_mm_projector.to(dtype=compute_dtype, device=training_args.device)
 
+        # false
         model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_projector_lr = training_args.mm_projector_lr
         training_args.use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
 
+    # false
     if training_args.bits in [4, 8]:
         from peft.tuners.lora import LoraLayer
         for name, module in model.named_modules():

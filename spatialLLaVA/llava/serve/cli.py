@@ -58,7 +58,10 @@ def main(args):
     image = load_image(args.image_file)
     image_size = image.size
     # Similar operation in model_worker.py
+    
+    # pad
     image_tensor = process_images([image], image_processor, model.config)
+    
     if type(image_tensor) is list:
         image_tensor = [image.to(model.device, dtype=torch.float16) for image in image_tensor]
     else:
@@ -112,9 +115,9 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="/root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.5-7b")
-    parser.add_argument("--model-base", type=str, default=None)
-    parser.add_argument("--image-file", type=str, default="./test_images/people.jpg")
+    parser.add_argument("--model-path", type=str, default="/root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.6-7b")
+    parser.add_argument("--model-base", type=str, default="/root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.6-7b")
+    parser.add_argument("--image-file", type=str, default="/root/private_data/MyCode/spatialLLaVA/test_images/people.jpg")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--conv-mode", type=str, default=None)
     parser.add_argument("--temperature", type=float, default=0.2)

@@ -235,8 +235,18 @@ class LLaVATrainer(Trainer):
             run_dir = self._get_output_dir(trial=trial)
             output_dir = os.path.join(run_dir, checkpoint_folder)
 
-            # Only save Adapter
-            keys_to_match = ['mm_projector', 'vision_resampler']
+            # # Only save Adapter
+            # keys_to_match = ['mm_projector', 'vision_resampler']
+            # if getattr(self.args, "use_im_start_end", False):
+            #     keys_to_match.extend(['embed_tokens', 'embed_in'])
+
+            # weight_to_save = get_mm_adapter_state_maybe_zero_3(self.model.named_parameters(), keys_to_match)
+
+            # if self.args.local_rank == 0 or self.args.local_rank == -1:
+            #     self.model.config.save_pretrained(output_dir)
+            #     torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
+            
+            keys_to_match = ['moge_mm_projector']
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(['embed_tokens', 'embed_in'])
 
@@ -244,7 +254,8 @@ class LLaVATrainer(Trainer):
 
             if self.args.local_rank == 0 or self.args.local_rank == -1:
                 self.model.config.save_pretrained(output_dir)
-                torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
+                torch.save(weight_to_save, os.path.join(output_dir, f'moge_mm_projector.bin'))
+
         else:
             super(LLaVATrainer, self)._save_checkpoint(model, trial, metrics)
 

@@ -39,8 +39,17 @@ MMVP_eval
 # dataset
 dataset/
 
+# benchmark
+spatialLLaVA/llava/eval/*
+
 # DevContainer
 !.devcontainer/*
 
 # Demo
 serve_images/
+
+# Other
+.editorconfig
+cog.yaml
+editorconfig.txt
+flash_attn-2.7.3*

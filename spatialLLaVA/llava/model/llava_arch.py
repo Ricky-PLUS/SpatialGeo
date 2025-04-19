@@ -33,18 +33,34 @@ class LlavaMetaModel:
 
         if hasattr(config, "mm_vision_tower"):
             self.vision_tower = build_vision_tower(config, delay_load=True)
+
+            dtype = self.vision_tower.dtype
+            device = self.vision_tower.device
+            clip_config = self.vision_tower.config
+            
+            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True,dtype = dtype, device = device,clip_config = clip_config)
+
             self.mm_projector = build_vision_projector(config)
+            self.moge_mm_projector = build_vision_projector(config)
 
             if 'unpad' in getattr(config, 'mm_patch_merge_type', ''):
                 self.image_newline = nn.Parameter(
                     torch.empty(config.hidden_size, dtype=self.dtype)
                 )
 
-    def get_vision_tower(self):
-        vision_tower = getattr(self, 'vision_tower', None)
-        if type(vision_tower) is list:
-            vision_tower = vision_tower[0]
-        return vision_tower
+    def get_vision_tower(self, load_model = "clip"):
+        if load_model == "clip":
+            vision_tower = getattr(self, 'vision_tower', None)
+            if type(vision_tower) is list:
+                vision_tower = vision_tower[0]
+            return vision_tower
+        else: 
+            vision_tower = getattr(self, "moge_tower", None)
+            if type(vision_tower) is list:
+                vision_tower = vision_tower[0]
+
+            return vision_tower
+
 
     def initialize_vision_modules(self, model_args, fsdp=None):
         vision_tower = model_args.vision_tower
@@ -52,7 +68,8 @@ class LlavaMetaModel:
         mm_vision_select_feature = model_args.mm_vision_select_feature
         pretrain_mm_mlp_adapter = model_args.pretrain_mm_mlp_adapter
         mm_patch_merge_type = model_args.mm_patch_merge_type
-
+        pretrain_moge_mm_mlp_adapter = model_args.pretrain_moge_mm_mlp_adapter
+    
         self.config.mm_vision_tower = vision_tower
 
         if self.get_vision_tower() is None:
@@ -68,6 +85,20 @@ class LlavaMetaModel:
             else:
                 vision_tower = self.vision_tower
             vision_tower.load_model()
+        
+        if self.get_vision_tower(load_model = "moge") is None:
+            moge_tower = build_vision_tower(load_model="moge")
+
+            if fsdp is not None and len(fsdp) > 0:
+                self.moge_tower = [moge_tower]
+            else:
+                self.moge_tower = moge_tower
+        else:
+            if fsdp is not None and len(fsdp) > 0:
+                moge_tower = self.moge_tower[0]
+            else:
+                moge_tower = self.moge_tower
+            moge_tower.load_model()
 
         self.config.use_mm_proj = True
         self.config.mm_projector_type = getattr(model_args, 'mm_projector_type', 'linear')
@@ -87,6 +118,19 @@ class LlavaMetaModel:
         else:
             # In case it is frozen by LoRA
             for p in self.mm_projector.parameters():
+                p.requires_grad = False
+        
+        if getattr(self, 'moge_mm_projector', None) is None:
+            self.moge_mm_projector = build_vision_projector(self.config)
+
+            if 'unpad' in mm_patch_merge_type:
+                embed_std = 1 / torch.sqrt(torch.tensor(self.config.hidden_size, dtype=self.dtype))
+                self.image_newline = nn.Parameter(
+                    torch.randn(self.config.hidden_size, dtype=self.dtype) * embed_std
+                )
+        else:
+            # In case it is frozen by LoRA
+            for p in self.moge_mm_projector.parameters():
                 p.requires_grad = True
 
         if pretrain_mm_mlp_adapter is not None:
@@ -95,6 +139,14 @@ class LlavaMetaModel:
                 return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
 
             self.mm_projector.load_state_dict(get_w(mm_projector_weights, 'mm_projector'))
+
+        if pretrain_moge_mm_mlp_adapter is not None:
+            print("Loading pretrained moge adpater!!!")
+            moge_mm_projector_weights = torch.load(pretrain_moge_mm_mlp_adapter, map_location='cpu')
+            def get_w(weights, keyword):
+                return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
+
+            self.moge_mm_projector.load_state_dict(get_w(moge_mm_projector_weights, 'moge_mm_projector'))
 
 
 def unpad_image(tensor, original_size):
@@ -136,11 +188,19 @@ class LlavaMetaForCausalLM(ABC):
 
     def get_vision_tower(self):
         return self.get_model().get_vision_tower()
+    
+    def get_moge_vision_tower(self):
+        return self.get_model().get_vision_tower(load_model = "moge")
 
     def encode_images(self, images):
         image_features = self.get_model().get_vision_tower()(images)
         image_features = self.get_model().mm_projector(image_features)
         return image_features
+    
+    def encode_images_withmoge(self, images):
+        image_features_moge = self.get_model().get_vision_tower(load_model = "moge")(images)
+        image_features_moge = self.get_model().moge_mm_projector(image_features_moge)
+        return image_features_moge
 
     def prepare_inputs_labels_for_multimodal(
         self, input_ids, position_ids, attention_mask, past_key_values, labels,
@@ -200,6 +260,8 @@ class LlavaMetaForCausalLM(ABC):
                 raise ValueError(f"Unexpected mm_patch_merge_type: {self.config.mm_patch_merge_type}")
         else:
             image_features = self.encode_images(images)
+            image_features_moge = self.encode_images_withmoge(images)
+
 
         # TODO: image start / end is not implemented here to support pretraining.
         if getattr(self.config, 'tune_mm_mlp_adapter', False) and getattr(self.config, 'mm_use_im_start_end', False):
@@ -231,7 +293,7 @@ class LlavaMetaForCausalLM(ABC):
         cur_image_idx = 0
         for batch_idx, cur_input_ids in enumerate(input_ids):
             num_images = (cur_input_ids == IMAGE_TOKEN_INDEX).sum()
-            if num_images == 0:
+            if num_images == 0: # false
                 cur_image_features = image_features[cur_image_idx]
                 cur_input_embeds_1 = self.get_model().embed_tokens(cur_input_ids)
                 cur_input_embeds = torch.cat([cur_input_embeds_1, cur_image_features[0:0]], dim=0)
@@ -258,9 +320,22 @@ class LlavaMetaForCausalLM(ABC):
                 cur_new_labels.append(cur_labels_noim[i])
                 if i < num_images:
                     cur_image_features = image_features[cur_image_idx]
+                    cur_image_features_moge = image_features_moge[cur_image_idx]
+                    
+                    num_patches, clip_dim = cur_image_features.shape
+                    clip_dtype = cur_image_features.dtype
+
+                    # Interleave features
+                    merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
+                    
+                    merged_features[0::2] = cur_image_features
+                    merged_features[1::2] = cur_image_features_moge
+                    
                     cur_image_idx += 1
-                    cur_new_input_embeds.append(cur_image_features)
+                    cur_new_input_embeds.append(merged_features)
+                    # cur_new_input_embeds.append(cur_image_features)
                     cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
 
             cur_new_input_embeds = [x.to(self.device) for x in cur_new_input_embeds]
 

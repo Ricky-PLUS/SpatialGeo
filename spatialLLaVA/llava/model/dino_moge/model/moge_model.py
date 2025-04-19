@@ -13,12 +13,14 @@ from transformers import CLIPVisionConfig
 from .utils import wrap_dinov2_attention_with_sdpa
 
 
+
 class MoGeModel(nn.Module):
     image_mean: torch.Tensor
     image_std: torch.Tensor
 
     def __init__(self, 
-        dtype, device, config, 
+        vision_tower,
+        dtype, device, clip_config,
         encoder: str = 'dinov2_vitl14', 
         intermediate_layers: Union[int, List[int]] = 1,
         trained_area_range: Tuple[Number, Number] = (500 * 500, 700 * 700),
@@ -31,40 +33,45 @@ class MoGeModel(nn.Module):
         self.trained_area_range = trained_area_range
         self.is_loaded = False
         self.Dtype = dtype
-        self.Device = device
-        self.Config = config
+        self.Device = "cuda:0"
+        self.Config = clip_config
+        self.vision_tower_name = vision_tower
         
         hub_loader = getattr(importlib.import_module(".dinov2.hub.backbones", __package__), encoder)
         self.backbone = hub_loader(pretrained=False)
         
-        self.image_mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1).to('cuda:0')
-        self.image_std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1).to('cuda:0')
+        self.image_mean = torch.tensor([0.485, 0.456, 0.406]).view(1, 3, 1, 1)
+        self.image_std = torch.tensor([0.229, 0.224, 0.225]).view(1, 3, 1, 1)
 
         
         if not delay_load:
             self.load_model()
         else:
             self.cfg_only = CLIPVisionConfig.from_pretrained(self.vision_tower_name)
-
+            
         if torch.__version__ >= '2.0':
             self.enable_pytorch_native_sdpa()
 
     def load_model(self, pretrained_model_name_or_path: Union[str, Path, IO[bytes]] = "/root/private_data/MyCode/spatialLLaVA/llava/model/dino_moge/vit_model.pt"):
-        
+        if self.is_loaded:
+            print('MogeModel is already loaded, `load_model` called again, skipping.')
+            return
+       
         path = Path(pretrained_model_name_or_path)
         if not path.exists():
             raise FileNotFoundError(f"error path: {path}")
 
         checkpoint = torch.load(
             pretrained_model_name_or_path, 
-            map_location='cpu', 
+            map_location=self.device, 
             weights_only=True  
         )
 
         self.backbone.load_state_dict(checkpoint, strict=False)
         self.backbone.requires_grad_(False)
-        self.backbone = self.backbone.to(device='cuda:0')
+        self.backbone = self.backbone.to(device="cuda:0", dtype=self.dtype)
 
+        print(f"Loaded pretrained model from {pretrained_model_name_or_path}")
         self.is_loaded = True
 
     def enable_pytorch_native_sdpa(self):
@@ -97,6 +104,9 @@ class MoGeModel(nn.Module):
             
         raw_img_h, raw_img_w = image.shape[-2:]
         patch_h, patch_w = raw_img_h // 14, raw_img_w // 14
+        
+        self.image_mean = self.image_mean.to(device=self.device, dtype=self.dtype)
+        self.image_std = self.image_std.to(device=self.device, dtype=self.dtype)
 
         image = (image - self.image_mean) / self.image_std
 
@@ -137,7 +147,7 @@ class MoGeModel(nn.Module):
         # image_14 = self.processor_moge(image_14, device=self.device)
         # import pdb
         # pdb.set_trace()
-        
+
         # Get intermediate layers from the backbone
         features = self.backbone.get_intermediate_layers(image_14.to(device=self.device, dtype=self.dtype), self.intermediate_layers, return_class_token=False)
         features = features[0].to(image_14.dtype)
