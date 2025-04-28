@@ -49,6 +49,7 @@ spatialLLaVA/llava/eval/*
 serve_images/
 
 # Other
+MoGeonly/
 .editorconfig
 cog.yaml
 editorconfig.txt
