@@ -94,11 +94,13 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                 cfg_pretrained = AutoConfig.from_pretrained(model_path, trust_remote_code=True)
                 model = LlavaMptForCausalLM.from_pretrained(model_base, low_cpu_mem_usage=True, config=cfg_pretrained, **kwargs)
             else:
+                from llava.model.language_model.llava_llama import LlavaConfig
+                cfg_pretrained = LlavaConfig.from_pretrained(model_path)      
                 tokenizer = AutoTokenizer.from_pretrained(model_base, use_fast=False)
-                cfg_pretrained = AutoConfig.from_pretrained(model_path)
                 model = LlavaLlamaForCausalLM.from_pretrained(model_base, low_cpu_mem_usage=True, config=cfg_pretrained, **kwargs)
+
                 print("model_based")
-            file_path = "/root/private_data/MyCode/spatialLLaVA/checkpoints/llava-v1.6-7b-moge_projector/moge_mm_projector.bin"
+            file_path = "/root/private_data/MyCode/spatialLLaVA/checkpoints/llava-v1.5-7b-moge_projector/checkpoint-200/moge_mm_projector.bin"
             if not os.path.isfile(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
             moge_mm_projector_weights = torch.load(file_path, map_location='cpu')
@@ -116,6 +118,7 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                     **kwargs
                 )
             else:
+                print("model_path: ",model_path)
                 tokenizer = AutoTokenizer.from_pretrained(model_path, use_fast=False)
                 model = LlavaLlamaForCausalLM.from_pretrained(
                     model_path,

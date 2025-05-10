@@ -36,3 +36,13 @@ deepspeed llava/train/train_mem.py \
     --dataloader_num_workers 4 \
     --lazy_preprocess True \
     --report_to wandb
+
+
+# finetune
+# --learning_rate 2e-5
+# --output_dir ./checkpoints/llava-v1.5-13b
+
+# finetune_task_lora
+# --output_dir ./checkpoints/llava-v1.5-13b-task-lora
+# ***--pretrain_mm_mlp_adapter ./checkpoints/llava-v1.5-13b-pretrain/mm_projector.bin 
+# --model_name_or_path liuhaotian/llava-v1.5-13b

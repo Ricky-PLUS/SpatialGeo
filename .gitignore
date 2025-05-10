@@ -22,7 +22,7 @@ dist
 wandb
 output
 
-checkpoints
+checkpoints*
 ckpts*
 
 .ipynb_checkpoints
@@ -40,7 +40,7 @@ MMVP_eval
 dataset/
 
 # benchmark
-spatialLLaVA/llava/eval/*
+spatialLLaVA/llava/eval/
 
 # DevContainer
 !.devcontainer/*
@@ -54,3 +54,6 @@ MoGeonly/
 cog.yaml
 editorconfig.txt
 flash_attn-2.7.3*
+outputs/
+parameters/
+requires_grad/

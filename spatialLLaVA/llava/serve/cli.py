@@ -115,9 +115,9 @@ def main(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="/root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.6-7b")
-    parser.add_argument("--model-base", type=str, default="/root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.6-7b")
-    parser.add_argument("--image-file", type=str, default="/root/private_data/MyCode/spatialLLaVA/test_images/people.jpg")
+    parser.add_argument("--model-path", type=str, default="/root/private_data/MyCode/spatialLLaVA/checkpoints1/llava-v1.5-7-lora-merged")
+    parser.add_argument("--model-base", type=str, default=None)
+    parser.add_argument("--image-file", type=str, default="/root/private_data/MyCode/spatialLLaVA/test_images/chair.jpg")
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--conv-mode", type=str, default=None)
     parser.add_argument("--temperature", type=float, default=0.2)

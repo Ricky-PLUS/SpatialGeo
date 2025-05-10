@@ -171,7 +171,7 @@ def get_mm_adapter_state_maybe_zero_3(named_params, keys_to_match):
 def find_all_linear_names(model):
     cls = torch.nn.Linear
     lora_module_names = set()
-    multimodal_keywords = ['mm_projector', 'vision_tower', 'vision_resampler']
+    multimodal_keywords = ['mm_projector', 'vision_tower','vision_resampler','moge_tower','moge_mm_projector']
     for name, module in model.named_modules():
         if any(mm_keyword in name for mm_keyword in multimodal_keywords):
             continue
@@ -882,7 +882,7 @@ def train(attn_implementation=None):
                 output.requires_grad_(True)
             model.get_input_embeddings().register_forward_hook(make_inputs_require_grad)
 
-    # false
+    # true (pretrain false)
     if training_args.lora_enable:
         from peft import LoraConfig, get_peft_model
         lora_config = LoraConfig(
@@ -942,6 +942,9 @@ def train(attn_implementation=None):
         vision_tower = model.get_vision_tower()
         vision_tower.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16, device=training_args.device)
 
+        moge_tower = model.get_moge_vision_tower()
+        moge_tower.backbone.to(dtype=torch.bfloat16 if training_args.bf16 else torch.float16)
+
         data_args.image_processor = vision_tower.image_processor
         data_args.is_multimodal = True
 
@@ -949,7 +952,7 @@ def train(attn_implementation=None):
         model.config.tokenizer_padding_side = tokenizer.padding_side
         model.config.tokenizer_model_max_length = tokenizer.model_max_length
 
-        # 修改
+        # pretrainmoge
         model.config.tune_mm_mlp_adapter = training_args.tune_mm_mlp_adapter = model_args.tune_mm_mlp_adapter
         if model_args.tune_mm_mlp_adapter:
             model.requires_grad_(False)
@@ -975,7 +978,12 @@ def train(attn_implementation=None):
 
         # false
         model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
+        
+        # 2e-5(lora finetune)
         model.config.mm_projector_lr = training_args.mm_projector_lr
+        model.config.moge_mm_projector_lr = training_args.mm_projector_lr
+        
+        # false
         training_args.use_im_start_end = model_args.mm_use_im_start_end
         model.config.mm_use_im_patch_token = model_args.mm_use_im_patch_token
         model.initialize_vision_tokenizer(model_args, tokenizer=tokenizer)
@@ -994,6 +1002,16 @@ def train(attn_implementation=None):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
 
+    with open('requires_grad155.txt', 'w') as f:  # 打开文件并写入
+        for idx, (name, param) in enumerate(model.named_parameters(), 1):
+            print(f"参数 #{idx}", file=f)
+            print(f"名称: {name}", file=f)
+            print(f"requires_grad: {param.requires_grad}", file=f)
+            print(f"形状: {tuple(param.shape)}", file=f)
+            print(f"类型: {param.dtype}", file=f)
+            print(f"值样例: {param.flatten()[:3].tolist()}...", file=f)  # 显示前3个元素
+            print("-" * 50, file=f)
+    
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)
     trainer = LLaVATrainer(model=model,

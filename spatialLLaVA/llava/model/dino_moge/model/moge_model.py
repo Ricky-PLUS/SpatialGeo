@@ -9,6 +9,7 @@ import torch.nn.functional as F
 import numpy as np
 from PIL import Image
 from transformers import CLIPVisionConfig
+from transformers import CLIPVisionModel
 
 from .utils import wrap_dinov2_attention_with_sdpa
 
@@ -20,7 +21,6 @@ class MoGeModel(nn.Module):
 
     def __init__(self, 
         vision_tower,
-        dtype, device, clip_config,
         encoder: str = 'dinov2_vitl14', 
         intermediate_layers: Union[int, List[int]] = 1,
         trained_area_range: Tuple[Number, Number] = (500 * 500, 700 * 700),
@@ -32,9 +32,6 @@ class MoGeModel(nn.Module):
         self.intermediate_layers = intermediate_layers
         self.trained_area_range = trained_area_range
         self.is_loaded = False
-        self.Dtype = dtype
-        self.Device = "cuda:0"
-        self.Config = clip_config
         self.vision_tower_name = vision_tower
         
         hub_loader = getattr(importlib.import_module(".dinov2.hub.backbones", __package__), encoder)
@@ -56,6 +53,9 @@ class MoGeModel(nn.Module):
         if self.is_loaded:
             print('MogeModel is already loaded, `load_model` called again, skipping.')
             return
+        
+        self.clip_vision_tower = CLIPVisionModel.from_pretrained(self.vision_tower_name)
+        self.clip_vision_tower.requires_grad_(False)
        
         path = Path(pretrained_model_name_or_path)
         if not path.exists():
@@ -69,7 +69,6 @@ class MoGeModel(nn.Module):
 
         self.backbone.load_state_dict(checkpoint, strict=False)
         self.backbone.requires_grad_(False)
-        self.backbone = self.backbone.to(device="cuda:0", dtype=self.dtype)
 
         print(f"Loaded pretrained model from {pretrained_model_name_or_path}")
         self.is_loaded = True
@@ -147,6 +146,8 @@ class MoGeModel(nn.Module):
         # image_14 = self.processor_moge(image_14, device=self.device)
         # import pdb
         # pdb.set_trace()
+        
+        self.backbone.to(device=self.device, dtype=self.dtype)
 
         # Get intermediate layers from the backbone
         features = self.backbone.get_intermediate_layers(image_14.to(device=self.device, dtype=self.dtype), self.intermediate_layers, return_class_token=False)
@@ -160,16 +161,16 @@ class MoGeModel(nn.Module):
 
     @property
     def dtype(self):
-        return self.Dtype
+        return self.clip_vision_tower.dtype
 
     @property
     def device(self):
-        return self.Device
+        return self.clip_vision_tower.device
 
     @property
     def config(self):
         if self.is_loaded:
-            return self.Config
+            return self.clip_vision_tower.config
         else:
             return self.cfg_only
     
@@ -177,3 +178,8 @@ class MoGeModel(nn.Module):
     def hidden_size(self):
         #return self.config.hidden_size
         return 1024
+    
+    @property
+    def num_patches(self):
+        #return (self.config.image_size // self.config.patch_size) ** 2
+        return 256

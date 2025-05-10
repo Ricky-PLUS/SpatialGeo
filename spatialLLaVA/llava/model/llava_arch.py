@@ -33,12 +33,8 @@ class LlavaMetaModel:
 
         if hasattr(config, "mm_vision_tower"):
             self.vision_tower = build_vision_tower(config, delay_load=True)
-
-            dtype = self.vision_tower.dtype
-            device = self.vision_tower.device
-            clip_config = self.vision_tower.config
             
-            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True,dtype = dtype, device = device,clip_config = clip_config)
+            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True)
 
             self.mm_projector = build_vision_projector(config)
             self.moge_mm_projector = build_vision_projector(config)
@@ -116,9 +112,9 @@ class LlavaMetaModel:
                     torch.randn(self.config.hidden_size, dtype=self.dtype) * embed_std
                 )
         else:
-            # In case it is frozen by LoRA
+            # In case it is frozen by LoRA (pretrain false)
             for p in self.mm_projector.parameters():
-                p.requires_grad = False
+                p.requires_grad = True
         
         if getattr(self, 'moge_mm_projector', None) is None:
             self.moge_mm_projector = build_vision_projector(self.config)
@@ -333,7 +329,7 @@ class LlavaMetaForCausalLM(ABC):
                     
                     cur_image_idx += 1
                     cur_new_input_embeds.append(merged_features)
-                    # cur_new_input_embeds.append(cur_image_features)
+                    # cur_new_input_embeds.append(cur_image_features_moge)
                     cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
                     cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
 
