@@ -255,7 +255,7 @@ class LlavaMetaForCausalLM(ABC):
             else:
                 raise ValueError(f"Unexpected mm_patch_merge_type: {self.config.mm_patch_merge_type}")
         else:
-            image_features = self.encode_images(images)
+            # image_features = self.encode_images(images)
             image_features_moge = self.encode_images_withmoge(images)
 
 
@@ -315,22 +315,22 @@ class LlavaMetaForCausalLM(ABC):
                 cur_new_input_embeds.append(cur_input_embeds_no_im[i])
                 cur_new_labels.append(cur_labels_noim[i])
                 if i < num_images:
-                    cur_image_features = image_features[cur_image_idx]
+                    # cur_image_features = image_features[cur_image_idx]
                     cur_image_features_moge = image_features_moge[cur_image_idx]
                     
-                    num_patches, clip_dim = cur_image_features.shape
-                    clip_dtype = cur_image_features.dtype
+                    # num_patches, clip_dim = cur_image_features.shape
+                    # clip_dtype = cur_image_features.dtype
 
-                    # Interleave features
-                    merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
+                    # # # Interleave features
+                    # merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
                     
-                    merged_features[0::2] = cur_image_features
-                    merged_features[1::2] = cur_image_features_moge
+                    # merged_features[0::2] = cur_image_features
+                    # merged_features[1::2] = cur_image_features_moge
                     
                     cur_image_idx += 1
-                    cur_new_input_embeds.append(merged_features)
-                    # cur_new_input_embeds.append(cur_image_features_moge)
-                    cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    # cur_new_input_embeds.append(merged_features)
+                    cur_new_input_embeds.append(cur_image_features_moge)
+                    # cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
                     cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
 
             cur_new_input_embeds = [x.to(self.device) for x in cur_new_input_embeds]

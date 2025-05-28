@@ -962,13 +962,10 @@ def train(attn_implementation=None):
             for p in model.get_model().moge_mm_projector.parameters():
                 p.requires_grad = True
 
-        # false
+        
         model.config.freeze_mm_mlp_adapter = training_args.freeze_mm_mlp_adapter
         if training_args.freeze_mm_mlp_adapter:
             for p in model.get_model().mm_projector.parameters():
-                p.requires_grad = False
-
-            for p in model.get_model().moge_mm_projector.parameters():
                 p.requires_grad = False
 
         # false
@@ -1002,7 +999,7 @@ def train(attn_implementation=None):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
 
-    with open('requires_grad155.txt', 'w') as f:  # 打开文件并写入
+    with open('requires_gradmoge2.txt', 'w') as f:  # 打开文件并写入
         for idx, (name, param) in enumerate(model.named_parameters(), 1):
             print(f"参数 #{idx}", file=f)
             print(f"名称: {name}", file=f)

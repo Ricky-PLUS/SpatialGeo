@@ -5,10 +5,11 @@ deepspeed llava/train/train_mem.py \
     --deepspeed ./scripts/zero2.json \
     --model_name_or_path /root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.5-7b \
     --version v1 \
-    --data_path /root/private_data/MyCode/dataset/vg.json \
+    --data_path /root/private_data/MyCode/dataset/llava_v1_5_mix665k.json \
     --image_folder /root/private_data/MyCode/dataset \
     --vision_tower /root/private_data/MyCode/spatialLLaVA/llavamodel/clip-vit-large-patch14-336 \
-    --pretrain_moge_mm_mlp_adapter /root/private_data/MyCode/spatialLLaVA/checkpoints/llava-v1.5-7b-moge_projector/checkpoint-200/moge_mm_projector.bin \
+    --pretrain_moge_mm_mlp_adapter /root/private_data/MyCode/spatialLLaVA/checkpointsmoge/llava-v1.5-7b-moge_projector/moge_mm_projector.bin \
+    --freeze_mm_mlp_adapter True \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
     --mm_use_im_start_end False \
@@ -16,7 +17,7 @@ deepspeed llava/train/train_mem.py \
     --image_aspect_ratio pad \
     --group_by_modality_length True \
     --bf16 True \
-    --output_dir ./checkpoints2/llava-v1.5-7b-lora \
+    --output_dir ./checkpointsmoge/llava-v1.5-7b-lora \
     --num_train_epochs 1 \
     --per_device_train_batch_size 16 \
     --per_device_eval_batch_size 4 \
