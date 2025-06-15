@@ -24,6 +24,7 @@ from .multimodal_projector.builder import build_vision_projector
 from llava.constants import IGNORE_INDEX, IMAGE_TOKEN_INDEX, DEFAULT_IMAGE_PATCH_TOKEN, DEFAULT_IM_START_TOKEN, DEFAULT_IM_END_TOKEN
 
 from llava.mm_utils import get_anyres_image_grid_shape
+import random
 
 
 class LlavaMetaModel:
@@ -32,12 +33,19 @@ class LlavaMetaModel:
         super(LlavaMetaModel, self).__init__(config)
 
         if hasattr(config, "mm_vision_tower"):
+            print("\nmoge\n")
+
             self.vision_tower = build_vision_tower(config, delay_load=True)
             
-            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True)
+            self.intermediate_layers = 4
+            self.moge_tower = build_vision_tower(config, load_model = "moge", delay_load=True, intermediate_layers = self.intermediate_layers)
 
             self.mm_projector = build_vision_projector(config)
-            self.moge_mm_projector = build_vision_projector(config)
+            
+            self.moge_mm_projector_list = nn.ModuleList([
+                build_vision_projector(config) for _ in range(self.intermediate_layers)
+            ])
+            # self.moge_mm_projector = build_vision_projector(config)
 
             if 'unpad' in getattr(config, 'mm_patch_merge_type', ''):
                 self.image_newline = nn.Parameter(
@@ -116,8 +124,10 @@ class LlavaMetaModel:
             for p in self.mm_projector.parameters():
                 p.requires_grad = True
         
-        if getattr(self, 'moge_mm_projector', None) is None:
-            self.moge_mm_projector = build_vision_projector(self.config)
+        if getattr(self, 'moge_mm_projector_list', None) is None:
+            self.moge_mm_projector_list = nn.ModuleList([
+                build_vision_projector(self.config) for _ in range(self.intermediate_layers)
+            ])
 
             if 'unpad' in mm_patch_merge_type:
                 embed_std = 1 / torch.sqrt(torch.tensor(self.config.hidden_size, dtype=self.dtype))
@@ -126,7 +136,7 @@ class LlavaMetaModel:
                 )
         else:
             # In case it is frozen by LoRA
-            for p in self.moge_mm_projector.parameters():
+            for p in self.moge_mm_projector_list.parameters():
                 p.requires_grad = True
 
         if pretrain_mm_mlp_adapter is not None:
@@ -138,11 +148,11 @@ class LlavaMetaModel:
 
         if pretrain_moge_mm_mlp_adapter is not None:
             print("Loading pretrained moge adpater!!!")
-            moge_mm_projector_weights = torch.load(pretrain_moge_mm_mlp_adapter, map_location='cpu')
+            moge_mm_projector_list_weights = torch.load(pretrain_moge_mm_mlp_adapter, map_location='cpu')
             def get_w(weights, keyword):
                 return {k.split(keyword + '.')[1]: v for k, v in weights.items() if keyword in k}
 
-            self.moge_mm_projector.load_state_dict(get_w(moge_mm_projector_weights, 'moge_mm_projector'))
+            self.moge_mm_projector_list.load_state_dict(get_w(moge_mm_projector_list_weights, 'moge_mm_projector_list'))
 
 
 def unpad_image(tensor, original_size):
@@ -195,7 +205,13 @@ class LlavaMetaForCausalLM(ABC):
     
     def encode_images_withmoge(self, images):
         image_features_moge = self.get_model().get_vision_tower(load_model = "moge")(images)
-        image_features_moge = self.get_model().moge_mm_projector(image_features_moge)
+        
+        image_features_moge = torch.stack([
+            proj(feat)
+                for proj, feat in zip(self.get_model().moge_mm_projector_list, image_features_moge)
+        ], dim=1).sum(dim=1)
+        
+        # image_features_moge = self.get_model().moge_mm_projector(image_features_moge)
         return image_features_moge
 
     def prepare_inputs_labels_for_multimodal(
@@ -255,7 +271,7 @@ class LlavaMetaForCausalLM(ABC):
             else:
                 raise ValueError(f"Unexpected mm_patch_merge_type: {self.config.mm_patch_merge_type}")
         else:
-            # image_features = self.encode_images(images)
+            image_features = self.encode_images(images)
             image_features_moge = self.encode_images_withmoge(images)
 
 
@@ -315,23 +331,49 @@ class LlavaMetaForCausalLM(ABC):
                 cur_new_input_embeds.append(cur_input_embeds_no_im[i])
                 cur_new_labels.append(cur_labels_noim[i])
                 if i < num_images:
-                    # cur_image_features = image_features[cur_image_idx]
+                    
+                    cur_image_features = image_features[cur_image_idx]
                     cur_image_features_moge = image_features_moge[cur_image_idx]
                     
-                    # num_patches, clip_dim = cur_image_features.shape
-                    # clip_dtype = cur_image_features.dtype
+                    num_patches, clip_dim = cur_image_features.shape
+                    clip_dtype = cur_image_features.dtype
 
-                    # # # Interleave features
-                    # merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
+                    # Interleave features
+                    merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
                     
-                    # merged_features[0::2] = cur_image_features
-                    # merged_features[1::2] = cur_image_features_moge
+                    merged_features[0::2] = cur_image_features
+                    merged_features[1::2] = cur_image_features_moge
                     
                     cur_image_idx += 1
-                    # cur_new_input_embeds.append(merged_features)
-                    cur_new_input_embeds.append(cur_image_features_moge)
-                    # cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    cur_new_input_embeds.append(merged_features)
+                    cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
                     cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+             
+                    # Our second-stage training
+                    # clip_random = 0 if random.random() < 0.3 else 1
+                    # if clip_random == 1:
+                    #     cur_image_features = image_features[cur_image_idx]
+                    #     cur_image_features_moge = image_features_moge[cur_image_idx]
+                        
+                    #     num_patches, clip_dim = cur_image_features.shape
+                    #     clip_dtype = cur_image_features.dtype
+
+                    #     merged_features = torch.empty(2*num_patches, clip_dim, dtype = clip_dtype)
+                        
+                    #     merged_features[0::2] = cur_image_features
+                    #     merged_features[1::2] = cur_image_features_moge
+                        
+                    #     cur_image_idx += 1
+                    #     cur_new_input_embeds.append(merged_features)
+
+                    #     cur_new_labels.append(torch.full((cur_image_features.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    #     cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
+                    # else:
+                    #     cur_image_features_moge = image_features_moge[cur_image_idx]
+                        
+                    #     cur_image_idx += 1
+                    #     cur_new_input_embeds.append(cur_image_features_moge)
+                    #     cur_new_labels.append(torch.full((cur_image_features_moge.shape[0],), IGNORE_INDEX, device=cur_labels.device, dtype=cur_labels.dtype))
 
             cur_new_input_embeds = [x.to(self.device) for x in cur_new_input_embeds]
 

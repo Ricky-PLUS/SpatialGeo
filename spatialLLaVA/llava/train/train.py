@@ -171,7 +171,7 @@ def get_mm_adapter_state_maybe_zero_3(named_params, keys_to_match):
 def find_all_linear_names(model):
     cls = torch.nn.Linear
     lora_module_names = set()
-    multimodal_keywords = ['mm_projector', 'vision_tower','vision_resampler','moge_tower','moge_mm_projector']
+    multimodal_keywords = ['mm_projector', 'vision_tower','vision_resampler','moge_tower','moge_mm_projector_list']
     for name, module in model.named_modules():
         if any(mm_keyword in name for mm_keyword in multimodal_keywords):
             continue
@@ -207,7 +207,7 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         #     else:
         #         torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
 
-        keys_to_match = ['moge_mm_projector']
+        keys_to_match = ['moge_mm_projector_list']
         if getattr(trainer.args, "use_im_start_end", False):
             keys_to_match.extend(['embed_tokens', 'embed_in'])
 
@@ -218,11 +218,11 @@ def safe_save_model_for_hf_trainer(trainer: transformers.Trainer,
         parent_folder = os.path.dirname(output_dir)
         if trainer.args.local_rank == 0 or trainer.args.local_rank == -1:
             if current_folder.startswith('checkpoint-'):
-                mm_projector_folder = os.path.join(parent_folder, "moge_mm_projector")
+                mm_projector_folder = os.path.join(parent_folder, "moge_mm_projector_list")
                 os.makedirs(mm_projector_folder, exist_ok=True)
                 torch.save(weight_to_save, os.path.join(mm_projector_folder, f'{current_folder}.bin'))
             else:
-                torch.save(weight_to_save, os.path.join(output_dir, f'moge_mm_projector.bin'))
+                torch.save(weight_to_save, os.path.join(output_dir, f'moge_mm_projector_list.bin'))
         return
 
     if trainer.deepspeed:
@@ -959,7 +959,7 @@ def train(attn_implementation=None):
             # for p in model.get_model().mm_projector.parameters():
             #     p.requires_grad = True
                 
-            for p in model.get_model().moge_mm_projector.parameters():
+            for p in model.get_model().moge_mm_projector_list.parameters():
                 p.requires_grad = True
 
         
@@ -971,14 +971,14 @@ def train(attn_implementation=None):
         # false
         if training_args.bits in [4, 8]:
             model.get_model().mm_projector.to(dtype=compute_dtype, device=training_args.device)
-            model.get_model().moge_mm_projector.to(dtype=compute_dtype, device=training_args.device)
+            model.get_model().moge_mm_projector_list.to(dtype=compute_dtype, device=training_args.device)
 
         # false
         model.config.mm_use_im_start_end = data_args.mm_use_im_start_end = model_args.mm_use_im_start_end
         
         # 2e-5(lora finetune)
         model.config.mm_projector_lr = training_args.mm_projector_lr
-        model.config.moge_mm_projector_lr = training_args.mm_projector_lr
+        model.config.moge_mm_projector_list_lr = training_args.mm_projector_lr
         
         # false
         training_args.use_im_start_end = model_args.mm_use_im_start_end
@@ -999,15 +999,6 @@ def train(attn_implementation=None):
                     if training_args.bf16 and module.weight.dtype == torch.float32:
                         module = module.to(torch.bfloat16)
 
-    with open('requires_gradmoge2.txt', 'w') as f:  # 打开文件并写入
-        for idx, (name, param) in enumerate(model.named_parameters(), 1):
-            print(f"参数 #{idx}", file=f)
-            print(f"名称: {name}", file=f)
-            print(f"requires_grad: {param.requires_grad}", file=f)
-            print(f"形状: {tuple(param.shape)}", file=f)
-            print(f"类型: {param.dtype}", file=f)
-            print(f"值样例: {param.flatten()[:3].tolist()}...", file=f)  # 显示前3个元素
-            print("-" * 50, file=f)
     
     data_module = make_supervised_data_module(tokenizer=tokenizer,
                                               data_args=data_args)

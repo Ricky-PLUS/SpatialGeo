@@ -49,7 +49,7 @@ class MoGeModel(nn.Module):
         if torch.__version__ >= '2.0':
             self.enable_pytorch_native_sdpa()
 
-    def load_model(self, pretrained_model_name_or_path: Union[str, Path, IO[bytes]] = "/root/private_data/MyCode/spatialLLaVA/llava/model/dino_moge/vit_model.pt"):
+    def load_model(self, pretrained_model_name_or_path: Union[str, Path, IO[bytes]] = ""):
         if self.is_loaded:
             print('MogeModel is already loaded, `load_model` called again, skipping.')
             return
@@ -59,7 +59,7 @@ class MoGeModel(nn.Module):
        
         path = Path(pretrained_model_name_or_path)
         if not path.exists():
-            raise FileNotFoundError(f"error path: {path}")
+            raise FileNotFoundError(f"error path in model.dino_moge.moge_model: {path}")
 
         checkpoint = torch.load(
             pretrained_model_name_or_path, 
@@ -151,8 +151,10 @@ class MoGeModel(nn.Module):
 
         # Get intermediate layers from the backbone
         features = self.backbone.get_intermediate_layers(image_14.to(device=self.device, dtype=self.dtype), self.intermediate_layers, return_class_token=False)
-        features = features[0].to(image_14.dtype)
-            
+        
+        for feat in features:
+            feat.to(image_14.dtype)
+  
         return features
     
     @property

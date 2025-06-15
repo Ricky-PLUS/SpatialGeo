@@ -163,8 +163,8 @@ class LLaVATrainer(Trainer):
             decay_parameters = get_parameter_names(opt_model, ALL_LAYERNORM_LAYERS)
             decay_parameters = [name for name in decay_parameters if "bias" not in name]
             if self.args.mm_projector_lr is not None:
-                print("moge_mm_projector_lr")
-                projector_parameters = [name for name, _ in opt_model.named_parameters() if "moge_mm_projector" in name]
+                print("moge_mm_projector_list_lr")
+                projector_parameters = [name for name, _ in opt_model.named_parameters() if "moge_mm_projector_list" in name]
                 optimizer_grouped_parameters = [
                     {
                         "params": [
@@ -278,7 +278,7 @@ class LLaVATrainer(Trainer):
             #     self.model.config.save_pretrained(output_dir)
             #     torch.save(weight_to_save, os.path.join(output_dir, f'mm_projector.bin'))
             
-            keys_to_match = ['moge_mm_projector']
+            keys_to_match = ['moge_mm_projector_list']
             if getattr(self.args, "use_im_start_end", False):
                 keys_to_match.extend(['embed_tokens', 'embed_in'])
 
@@ -286,7 +286,7 @@ class LLaVATrainer(Trainer):
 
             if self.args.local_rank == 0 or self.args.local_rank == -1:
                 self.model.config.save_pretrained(output_dir)
-                torch.save(weight_to_save, os.path.join(output_dir, f'moge_mm_projector.bin'))
+                torch.save(weight_to_save, os.path.join(output_dir, f'moge_mm_projector_list.bin'))
 
         else:
             super(LLaVATrainer, self)._save_checkpoint(model, trial, metrics)

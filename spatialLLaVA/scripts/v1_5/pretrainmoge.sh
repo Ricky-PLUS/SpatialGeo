@@ -1,26 +1,28 @@
 #!/bin/bash
 
-deepspeed llava/train/train_mem.py \
+# include=localhost:6,7 --include $include
+
+deepspeed  llava/train/train_mem.py \
     --deepspeed ./scripts/zero2.json \
-    --model_name_or_path /root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.5-7b \
+    --model_name_or_path liuhaotian/llava-v1.5-7b \
     --version plain \
-    --data_path /root/private_data/MyCode/dataset/pretraindata/blip_laion_cc_sbu_558k.json \
-    --image_folder /root/private_data/MyCode/dataset/pretraindata/images \
-    --vision_tower /root/private_data/MyCode/spatialLLaVA/llavamodel/clip-vit-large-patch14-336 \
+    --data_path ./dataset/pretraindata/blip_laion_cc_sbu_558k.json \
+    --image_folder ./dataset/pretraindata/images \
+    --vision_tower openai/clip-vit-large-patch14-336 \
     --tune_mm_mlp_adapter True \
     --mm_projector_type mlp2x_gelu \
     --mm_vision_select_layer -2 \
     --mm_use_im_start_end False \
     --mm_use_im_patch_token False \
     --bf16 True \
-    --output_dir ./checkpointsmoge/llava-v1.5-7b-moge_projector \
+    --output_dir ./checkpoints/llava-v1.5-7b-moge_projector \
     --num_train_epochs 1 \
     --per_device_train_batch_size 32 \
     --per_device_eval_batch_size 4 \
     --gradient_accumulation_steps 1 \
     --evaluation_strategy "no" \
     --save_strategy "steps" \
-    --save_steps 500 \
+    --save_steps 1000 \
     --save_total_limit 1 \
     --learning_rate 1e-3 \
     --weight_decay 0. \

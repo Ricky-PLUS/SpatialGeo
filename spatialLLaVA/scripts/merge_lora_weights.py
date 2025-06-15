@@ -13,9 +13,9 @@ def merge_lora(args):
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser()
-    parser.add_argument("--model-path", type=str, default="/root/private_data/MyCode/spatialLLaVA/checkpointsmoge/llava-v1.5-7b-lora")
-    parser.add_argument("--model-base", type=str, default="/root/private_data/MyCode/spatialLLaVA/llavamodel/llava-v1.5-7b")
-    parser.add_argument("--save-model-path", type=str, default="./checkpointsmoge/llava-v1.5-7-lora-merged")
+    parser.add_argument("--model-path", type=str, default="/fs-computility/ai4phys/wangweida/workspace/GUO/spatialMoge/checkpoints/llava-v1.5-7b-lora")
+    parser.add_argument("--model-base", type=str, default="/fs-computility/ai4phys/wangweida/huggingface/hub/model-llava-v1.5-7b/snapshots/llava-v1.5-7b")
+    parser.add_argument("--save-model-path", type=str, default="/fs-computility/ai4phys/wangweida/workspace/GUO/spatialMoge/checkpoints/llava-v1.5-7-lora-merged")
 
     args = parser.parse_args()
 

@@ -100,7 +100,9 @@ def load_pretrained_model(model_path, model_base, model_name, load_8bit=False, l
                 model = LlavaLlamaForCausalLM.from_pretrained(model_base, low_cpu_mem_usage=True, config=cfg_pretrained, **kwargs)
 
                 print("model_based")
+            
             file_path = "/root/private_data/MyCode/spatialLLaVA/checkpoints/llava-v1.5-7b-moge_projector/checkpoint-200/moge_mm_projector.bin"
+            print(file_path)
             if not os.path.isfile(file_path):
                 raise FileNotFoundError(f"File not found: {file_path}")
             moge_mm_projector_weights = torch.load(file_path, map_location='cpu')
