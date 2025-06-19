@@ -15,7 +15,7 @@ We use $\bullet$ to denote removing the CLIP branch in the first-stage training,
 | Model                  | Height | Width | Vertical Distance | Horizontal Distance | Direct Distance | Average |
 | :------------------ | -----: | ----: | ----------------: | ----------------: | ------------: | ------: |
 | LLaVA-1.5-7B           |  10.53 | 15.04 |             16.98 |               17.21 |           13.51 |   14.49 |
-| LLaVA-OSD              |  54.14 | 34.59 |           <font color=#1E90FF size=5 face="黑体">56.60</font>  |               50.82 |           40.54 |   46.73 |
+| LLaVA-OSD              |  54.14 | 34.59 |           <font color=#1E90FF size=7 face="黑体"> 56.60 </font>  |               50.82 |           40.54 |   46.73 |
 | GPT-4o                 |  18.80 | 10.53 |              4.72 |                5.74 |            2.03 |    8.41 |
 | GPT-4V                 |  24.06 | 21.05 |              6.60 |                9.02 |            7.43 |   13.86 |
 | GPT-4.1                | 61.65 | 36.84 |              2.83 |                9.02 |           19.59 |   27.10 |
