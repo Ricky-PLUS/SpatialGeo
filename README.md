@@ -20,11 +20,11 @@ We use $\bullet$ to denote removing the CLIP branch in the first-stage training,
 | GPT-4o                 |  18.80 | 10.53 |              4.72 |                5.74 |            2.03 |    8.41 |
 | GPT-4V                 |  24.06 | 21.05 |              6.60 |                9.02 |            7.43 |   13.86 |
 | GPT-4.1                | <u>61.65</u> | 36.84 |              2.83 |                9.02 |           19.59 |   27.10 |
-| SpatialRGPT            | **63.61** | **48.12** |             50.94 |               49.18 |           33.78 |   48.60 |
+| SpatialRGPT            | **<u>63.61</u>** | **48.12** |             50.94 |               49.18 |           33.78 |   48.60 |
 | **Variants of SpatialGeo**     |        |       |                   |                     |                 |         |
 | SpatialGeo-SA          |  54.14 | <u>44.36</u> |             54.72 |               55.74 |           38.51 |   48.91 |
 | SpatialGeo-SA ($\star$) |  48.12 | 37.59 |           **56.60** |           **63.93** |       **48.65** | <u>50.47</u> |
-| SpatialGeo-HA ($\bullet$,$\star$) |  18.05 | 17.29 |             26.42 |               18.85 |           21.62 |   20.25 |
+| SpatialGeo-HA ($\bullet$, $\star$) |  18.05 | 17.29 |             26.42 |               18.85 |           21.62 |   20.25 |
 | **Full model of SpatialGeo**           |        |       |                   |                     |                 |         |
 | SpatialGeo-HA ($\star$) |  58.65 | 41.35 |           **56.60** |           <u>59.02</u> |       **48.65** | **52.49** |
 
