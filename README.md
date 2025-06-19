@@ -1,4 +1,3 @@
-![alt text](READMEimages/SpatialGeo.png)
 # SpatialGeo: Boosting Spatial Reasoning in Multimodal LLMs via Geometry-Semantics Fusion
 
 ![alt text](READMEimages/first.png)
