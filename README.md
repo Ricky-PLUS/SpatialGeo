@@ -1,12 +1,18 @@
+<p align="center">
+  <img src="READMEimages/SpatialGeo.png" width="15%"/>
+</p>
+
 # SpatialGeo: Boosting Spatial Reasoning in Multimodal LLMs via Geometry-Semantics Fusion
 
 ![alt text](READMEimages/first.png)
+______________________________________________________________________
 
 ***SpatialGeo*** enhances ***spatial reasoning*** in MLLMs based on the novel vision encoder generating spatial-aware visual embedding.
 
 The overall architecture of ***SpatialGeo*** is shown in the figure below, which is composed of three major modules: 1) ***CLIP module*** with the CLIP encoder and its adapter to extract instance-level semantic features; 2) ***MoGe module*** with the MoGe encoder and its adapter to embed a mixture of geometry and semantic features; 3) ***LLM module*** with interleaved geometry and semantic embeddings together with text tokens as inputs to generate question answering.
 
 ![alt text](READMEimages/structure.png)
+______________________________________________________________________
 
 ## Spatial VQA Datasets
 We compare SpatialGeo with SOTA MLLMs on spatial VQA datasets, including ***SpatialRGPT-Bench*** which is the testing dataset in OSD, and ***SpatialScore*** to evaluate the generalization to unseen dataset.
@@ -27,6 +33,14 @@ We use $\bullet$ to denote removing the CLIP branch in the first-stage training,
 | ***Full model of SpatialGeo***           |        |       |                   |                     |                 |         |
 | SpatialGeo-HA ($\star$) |  58.65 | 41.35 |           ***56.60*** |           59.02 |       ***48.65*** | ***52.49*** |
 
+#### Examples From SpatialRGPT-Bench
+![alt text](READMEimages/rgpt1.png)
+![alt text](READMEimages/rgpt2.png)
+![alt text](READMEimages/rgpt3.png)
+![alt text](READMEimages/rgpt4.png)
+![alt text](READMEimages/rgpt5.png)
+______________________________________________________________________
+
 ### SpatialScore
 | Dataset             | LLaVA-1.5-7B | SpatialGeo-SA($\star$) | SpatialGeo-HA($\star$) |
 | :------------------ | -----------: | ---------------------: | ---------------------: |
@@ -39,6 +53,15 @@ We use $\bullet$ to denote removing the CLIP branch in the first-stage training,
 | VGBench             |        31.79 |                  36.50 |              ***37.54*** |
 | ***Average***         |        50.89 |                  53.22 |              ***55.86*** |
 
+#### Examples From SpatialScore
+![alt text](READMEimages/spatialscore1.png)
+![alt text](READMEimages/spatialscore2.png)
+![alt text](READMEimages/spatialscore3.png)
+![alt text](READMEimages/spatialscore4.png)
+![alt text](READMEimages/spatialscore5.png)
+
+______________________________________________________________________
+
 ## General VQA Benchmarks
 We further test on ***general VQA benchmarks*** to evaluate whether the models overfit to the spatial tasks, and employ their respective evaluation criteria.
 | Dataset                | LLaVA-1.5-7B | SpatialGeo-SA($\star$) | SpatialGeo-HA($\star$) |
@@ -50,3 +73,7 @@ We further test on ***general VQA benchmarks*** to evaluate whether the models o
 | MME                    | ***1504***     | 1464                   | 1470                   |
 | MMVP                   | 41           | 31                     | ***42***                 |
 | BLINK (relative_depth)           | 54.64        | 68.04                  | ***73.20***              |
+____________________________________________________________________
+
+#### Examples of Real World Photography
+![alt text](READMEimages/realworld.png)
