@@ -3,22 +3,20 @@
 </p>
 
 # SpatialGeo: Boosting Spatial Reasoning in Multimodal LLMs via Geometry-Semantics Fusion
-
-<p align="center">
-  <img src="READMEimages/first.png" width="50%"/>
-</p>
-
 ______________________________________________________________________
 
 ***SpatialGeo*** enhances ***spatial reasoning*** in MLLMs based on the novel vision encoder generating spatial-aware visual embedding.
 
 The overall architecture of ***SpatialGeo*** is shown in the figure below, which is composed of three major modules: 1) ***CLIP module*** with the CLIP encoder and its adapter to extract instance-level semantic features; 2) ***MoGe module*** with the MoGe encoder and its adapter to embed a mixture of geometry and semantic features; 3) ***LLM module*** with interleaved geometry and semantic embeddings together with text tokens as inputs to generate question answering.
 
-![alt text](READMEimages/structure.png)
+<p align="center">
+  <img src="READMEimages/structure.png" width="60%"/>
+</p>
+
 ______________________________________________________________________
 
 ## Spatial VQA Datasets
-We compare SpatialGeo with SOTA MLLMs on spatial VQA datasets, including ***SpatialRGPT-Bench*** which is the testing dataset in OSD, and ***SpatialScore*** to evaluate the generalization to unseen dataset.
+We compare SpatialGeo with SOTA MLLMs on spatial VQA datasets, including ***SpatialRGPT-Bench*** and ***SpatialScore***.
 ### SpatialRGPT-Bench
 We use $\bullet$ to denote removing the CLIP branch in the first-stage training, $\star$ to denote random feature dropping for CLIP in the second stage, SA to denote single adapter using the last block in MoGe, and HA to denote hierarchical adapter.
 | Model                  | Height | Width | Vertical Distance | Horizontal Distance | Direct Distance | Average |
@@ -37,11 +35,22 @@ We use $\bullet$ to denote removing the CLIP branch in the first-stage training,
 | SpatialGeo-HA ($\star$) |  58.65 | 41.35 |           ***56.60*** |           59.02 |       ***48.65*** | ***52.49*** |
 
 #### Examples From SpatialRGPT-Bench
-![alt text](READMEimages/rgpt1.png)
-![alt text](READMEimages/rgpt2.png)
-![alt text](READMEimages/rgpt3.png)
-![alt text](READMEimages/rgpt4.png)
-![alt text](READMEimages/rgpt5.png)
+<p align="center">
+  <img src="READMEimages/rgpt1.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/rgpt2.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/rgpt3.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/rgpt4.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/rgpt5.png" width="60%"/>
+</p>
+
 ______________________________________________________________________
 
 ### SpatialScore
@@ -57,11 +66,21 @@ ______________________________________________________________________
 | ***Average***         |        50.89 |                  53.22 |              ***55.86*** |
 
 #### Examples From SpatialScore
-![alt text](READMEimages/spatialscore1.png)
-![alt text](READMEimages/spatialscore2.png)
-![alt text](READMEimages/spatialscore3.png)
-![alt text](READMEimages/spatialscore4.png)
-![alt text](READMEimages/spatialscore5.png)
+<p align="center">
+  <img src="READMEimages/spatialscore1.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/spatialscore2.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/spatialscore3.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/spatialscore4.png" width="60%"/>
+</p>
+<p align="center">
+  <img src="READMEimages/spatialscore5.png" width="60%"/>
+</p>
 
 ______________________________________________________________________
 
@@ -79,4 +98,6 @@ We further test on ***general VQA benchmarks*** to evaluate whether the models o
 ____________________________________________________________________
 
 #### Examples of Real World Photography
-![alt text](READMEimages/realworld.png)
+<p align="center">
+  <img src="READMEimages/realworld.png" width="60%"/>
+</p>
