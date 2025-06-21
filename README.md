@@ -10,7 +10,7 @@ ______________________________________________________________________
 The overall architecture of ***SpatialGeo*** is shown in the figure below, which is composed of three major modules: 1) ***CLIP module*** with the CLIP encoder and its adapter to extract instance-level semantic features; 2) ***MoGe module*** with the MoGe encoder and its adapter to embed a mixture of geometry and semantic features; 3) ***LLM module*** with interleaved geometry and semantic embeddings together with text tokens as inputs to generate question answering.
 
 <p align="center">
-  <img src="READMEimages/structure.png" width="60%"/>
+  <img src="READMEimages/structure.png" width="80%"/>
 </p>
 
 ______________________________________________________________________
@@ -18,37 +18,29 @@ ______________________________________________________________________
 ## Spatial VQA Datasets
 We compare SpatialGeo with SOTA MLLMs on spatial VQA datasets, including ***SpatialRGPT-Bench*** and ***SpatialScore***.
 ### SpatialRGPT-Bench
-We use $\bullet$ to denote removing the CLIP branch in the first-stage training, $\star$ to denote random feature dropping for CLIP in the second stage, SA to denote single adapter using the last block in MoGe, and HA to denote hierarchical adapter.
+
 | Model                  | Height | Width | Vertical Distance | Horizontal Distance | Direct Distance | Average |
 | :------------------ | -----: | ----: | ----------------: | ----------------: | ------------: | ------: |
 | LLaVA-1.5-7B           |  10.53 | 15.04 |             16.98 |               17.21 |           13.51 |   14.49 |
-| LLaVA-OSD              |  54.14 | 34.59 |          ***56.60***  |               50.82 |           40.54 |   46.73 |
-| GPT-4o                 |  18.80 | 10.53 |              4.72 |                5.74 |            2.03 |    8.41 |
-| GPT-4V                 |  24.06 | 21.05 |              6.60 |                9.02 |            7.43 |   13.86 |
 | GPT-4.1                | 61.65 | 36.84 |              2.83 |                9.02 |           19.59 |   27.10 |
-| SpatialRGPT            | ***63.61*** | ***48.12*** |             50.94 |               49.18 |           33.78 |   48.60 |
-| ***Variants of SpatialGeo***     |        |       |                   |                     |                 |         |
-| SpatialGeo-SA          |  54.14 | 44.36 |             54.72 |               55.74 |           38.51 |   48.91 |
-| SpatialGeo-SA ($\star$) |  48.12 | 37.59 |           ***56.60*** |           ***63.93*** |       ***48.65*** | 50.47 |
-| SpatialGeo-HA ($\bullet$, $\star$) |  18.05 | 17.29 |             26.42 |               18.85 |           21.62 |   20.25 |
-| ***Full model of SpatialGeo***           |        |       |                   |                     |                 |         |
-| SpatialGeo-HA ($\star$) |  58.65 | 41.35 |           ***56.60*** |           59.02 |       ***48.65*** | ***52.49*** |
+| SpatialRGPT            | ***63.61*** | ***48.12*** |             50.94 |               49.18 |           33.78 |   48.60 |       |        |       |                   |                     |                 |         |
+| SpatialGeo |  58.65 | 41.35 |           ***56.60*** |           59.02 |       ***48.65*** | ***52.49*** |
 
 #### Examples From SpatialRGPT-Bench
 <p align="center">
-  <img src="READMEimages/rgpt1.png" width="60%"/>
+  <img src="READMEimages/rgpt1.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/rgpt2.png" width="60%"/>
+  <img src="READMEimages/rgpt2.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/rgpt3.png" width="60%"/>
+  <img src="READMEimages/rgpt3.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/rgpt4.png" width="60%"/>
+  <img src="READMEimages/rgpt4.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/rgpt5.png" width="60%"/>
+  <img src="READMEimages/rgpt5.png" width="80%"/>
 </p>
 
 ______________________________________________________________________
@@ -67,19 +59,19 @@ ______________________________________________________________________
 
 #### Examples From SpatialScore
 <p align="center">
-  <img src="READMEimages/spatialscore1.png" width="60%"/>
+  <img src="READMEimages/spatialscore1.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/spatialscore2.png" width="60%"/>
+  <img src="READMEimages/spatialscore2.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/spatialscore3.png" width="60%"/>
+  <img src="READMEimages/spatialscore3.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/spatialscore4.png" width="60%"/>
+  <img src="READMEimages/spatialscore4.png" width="80%"/>
 </p>
 <p align="center">
-  <img src="READMEimages/spatialscore5.png" width="60%"/>
+  <img src="READMEimages/spatialscore5.png" width="80%"/>
 </p>
 
 ______________________________________________________________________
@@ -99,5 +91,5 @@ ____________________________________________________________________
 
 #### Examples of Real World Photography
 <p align="center">
-  <img src="READMEimages/realworld.png" width="60%"/>
+  <img src="READMEimages/realworld.png" width="80%"/>
 </p>
