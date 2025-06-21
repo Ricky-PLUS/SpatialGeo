@@ -4,7 +4,9 @@
 
 # SpatialGeo: Boosting Spatial Reasoning in Multimodal LLMs via Geometry-Semantics Fusion
 
-![alt text](READMEimages/first.png)
+<p align="center">
+  <img src="READMEimages/first.png" width="50%"/>
+</p>
 ______________________________________________________________________
 
 ***SpatialGeo*** enhances ***spatial reasoning*** in MLLMs based on the novel vision encoder generating spatial-aware visual embedding.
