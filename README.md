@@ -19,6 +19,8 @@ ______________________________________________________________________
 ## Spatial VQA Datasets
 We compare SpatialGeo with SOTA MLLMs on spatial VQA datasets, including ***SpatialRGPT-Bench*** and ***SpatialScore***.
 
+______________________________________________________________________
+
 ### Examples From SpatialRGPT-Bench
 We select different types of questions from ***SpatialRGPT-Bench*** for presentation.
 <p align="center">
