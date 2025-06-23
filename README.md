@@ -46,35 +46,35 @@ ______________________________________________________________________
 ### Examples From SpatialScore
 We select different types of questions from ***SpatialScore*** for presentation.
 <p align="center">
-  <strong>Fig.1 Boundingboxs Distance</strong><br>
+  <strong>Fig.4 Boundingboxs Distance</strong><br>
   <img src="READMEimages/spatialscoreDepthanddistance.png" width="80%"/>
 </p>   
 
 <br>  <!-- 增加一个空行 -->
 
 <p align="center">
-  <strong>Fig.2 Objects Distance</strong><br>
+  <strong>Fig.5 Objects Distance</strong><br>
   <img src="READMEimages/spatialscoredepthanddistance.png" width="80%"/>
 </p>    
 
 <br>  <!-- 增加一个空行 -->
 
 <p align="center">
-  <strong>Fig.3 Objects Distance</strong><br>
+  <strong>Fig.6 Objects Distance</strong><br>
   <img src="READMEimages/spatialscoredepth.png" width="80%"/>
 </p>    
 
 <br>  <!-- 增加一个空行 -->
 
 <p align="center">
-  <strong>Fig.4 Object Localization</strong><br>
+  <strong>Fig.7 Object Localization</strong><br>
   <img src="READMEimages/spatialscoreObjectLocalization.png" width="80%"/>
 </p>
 
 <br>  <!-- 增加一个空行 -->
 
 <p align="center">
-  <strong>Fig.5 Camera and Image Transformation</strong><br>
+  <strong>Fig.8 Camera and Image Transformation</strong><br>
   <img src="READMEimages/spatialscoreCameraandImageTransformation.png" width="80%"/>
 </p>
 
@@ -84,6 +84,6 @@ ______________________________________________________________________
 ### Examples of Real World Photography
 We take some photos in the real world for testing.
 <p align="center">
-  <strong>Fig.6 Real World Photography</strong><br>
+  <strong>Fig.9 Real World Photography</strong><br>
   <img src="READMEimages/realworld.png" width="80%"/>
 </p>
