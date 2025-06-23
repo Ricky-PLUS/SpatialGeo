@@ -17,21 +17,40 @@ ______________________________________________________________________
 
 ## Spatial VQA Datasets
 We compare SpatialGeo with SOTA MLLMs on spatial VQA datasets, including ***SpatialRGPT-Bench*** and ***SpatialScore***.
+
 ### Examples From SpatialRGPT-Bench
+We select different types of questions from ***SpatialRGPT-Bench*** for presentation.
 <p align="center">
-  <img src="READMEimages/rgpt1.png" width="80%"/>
+  <strong>Fig.1 Boundingboxs Distance</strong><br>
+  <img src="READMEimages/spatialscoreDepthanddistance.png" width="80%"/>
+</p>   
+
+<br>  <!-- 增加一个空行 -->
+
+<p align="center">
+  <strong>Fig.2 Objects Distance</strong><br>
+  <img src="READMEimages/spatialscoredepthanddistance.png" width="80%"/>
+</p>    
+
+<br>  <!-- 增加一个空行 -->
+
+<p align="center">
+  <strong>Fig.3 Objects Distance</strong><br>
+  <img src="READMEimages/spatialscoredepth.png" width="80%"/>
+</p>    
+
+<br>  <!-- 增加一个空行 -->
+
+<p align="center">
+  <strong>Fig.4 Object Localization</strong><br>
+  <img src="READMEimages/spatialscoreObjectLocalization.png" width="80%"/>
 </p>
+
+<br>  <!-- 增加一个空行 -->
+
 <p align="center">
-  <img src="READMEimages/rgpt2.png" width="80%"/>
-</p>
-<p align="center">
-  <img src="READMEimages/rgpt3.png" width="80%"/>
-</p>
-<p align="center">
-  <img src="READMEimages/rgpt4.png" width="80%"/>
-</p>
-<p align="center">
-  <img src="READMEimages/rgpt5.png" width="80%"/>
+  <strong>Fig.5 Camera and Image Transformation</strong><br>
+  <img src="READMEimages/spatialscoreCameraandImageTransformation.png" width="80%"/>
 </p>
 
 ______________________________________________________________________
@@ -39,32 +58,43 @@ ______________________________________________________________________
 ### Examples From SpatialScore
 We select different types of questions from ***SpatialScore*** for presentation.
 <p align="center">
-  <strong>Fig.1 Depth and Distance</strong><br>
+  <strong>Fig.1 Boundingboxs Distance</strong><br>
   <img src="READMEimages/spatialscoreDepthanddistance.png" width="80%"/>
+</p>   
+
+<br>  <!-- 增加一个空行 -->
+
+<p align="center">
+  <strong>Fig.2 Objects Distance</strong><br>
+  <img src="READMEimages/spatialscoredepthanddistance.png" width="80%"/>
 </p>    
 
 <br>  <!-- 增加一个空行 -->
 
 <p align="center">
-  <strong>Fig.2 Object Localization</strong><br>
+  <strong>Fig.3 Objects Distance</strong><br>
+  <img src="READMEimages/spatialscoredepth.png" width="80%"/>
+</p>    
+
+<br>  <!-- 增加一个空行 -->
+
+<p align="center">
+  <strong>Fig.4 Object Localization</strong><br>
   <img src="READMEimages/spatialscoreObjectLocalization.png" width="80%"/>
 </p>
 
 <br>  <!-- 增加一个空行 -->
 
 <p align="center">
-  <img src="READMEimages/spatialscore3.png" width="80%"/>
-</p>
-<p align="center">
-  <img src="READMEimages/spatialscore4.png" width="80%"/>
-</p>
-<p align="center">
-  <img src="READMEimages/spatialscore5.png" width="80%"/>
+  <strong>Fig.5 Camera and Image Transformation</strong><br>
+  <img src="READMEimages/spatialscoreCameraandImageTransformation.png" width="80%"/>
 </p>
 
 ______________________________________________________________________
 
 ### Examples of Real World Photography
+We take some photos in the real world for testing.
 <p align="center">
+  <strong>Fig.6 Real World Photography</strong><br>
   <img src="READMEimages/realworld.png" width="80%"/>
 </p>
