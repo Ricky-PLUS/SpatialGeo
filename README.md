@@ -99,5 +99,6 @@ ______________________________________________________________________
 [2] OpenAI. "Introducing gpt-4.1 in the API." April 2025. [Online]. Available: https://openai.com/index/gpt-4-1/ 
 
 [3] An-Chieh Cheng, Hongxu Yin, Yang Fu, Qiushan Guo, Ruihan Yang, Jan Kautz, Xiaolong Wang, and Sifei Liu. "SpatialRGPT: Grounded Spatial Reasoning in Vision-Language Models." NeurIPS, pp.135062-135093. 2025.
+
 [4] Haoning Wu, Xiao Huang, Yaohui Chen, Ya Zhang, Yanfeng Wang, and Weidi Xie. "SpatialScore: Towards Unified Evaluation for Multimodal Spatial Understanding." arXiv preprint arXiv:2505.17012  2025.​
 
