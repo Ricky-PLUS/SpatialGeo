@@ -129,7 +129,7 @@ python -m llava.serve.cli \
 ```
 Here are some examples of inferencing:
 <p align="center">
-  <strong>Fig.9 Real World Photography</strong><br>
+  <strong>Real World Photography</strong><br>
   <img src="READMEimages/realworld.png" width="80%"/>
 </p>
 <br>  <!-- 增加一个空行 -->
