@@ -82,16 +82,6 @@ We select different types of questions from ***SpatialScore*** for presentation.
 <br>  <!-- 增加一个空行 -->
 ______________________________________________________________________
 
-### Examples of Real World Photography
-We take some photos in the real world for testing.
-<p align="center">
-  <strong>Fig.9 Real World Photography</strong><br>
-  <img src="READMEimages/realworld.png" width="80%"/>
-</p>
-<br>  <!-- 增加一个空行 -->
-
-______________________________________________________________________
-
 ## Install
 Run LLaVA on Linux.
 1. Clone this repository and navigate to LLaVA folder
@@ -137,6 +127,13 @@ python -m llava.serve.cli \
     --image-file "image_path" \
     --load-4bit
 ```
+Here are some examples of inferencing:
+<p align="center">
+  <strong>Fig.9 Real World Photography</strong><br>
+  <img src="READMEimages/realworld.png" width="80%"/>
+</p>
+<br>  <!-- 增加一个空行 -->
+
 
 ## Evaluation
 
@@ -156,3 +153,16 @@ Most of the testing processes are consistent with LLaVA1.5
 ## Related Projects
 
 - [LLaVA 1.5](https://github.com/haotian-liu/LLaVA)
+
+# References
+If you find this repository useful for your research, please cite the following work.
+```
+@inproceedings{guo2025spatialgeo,
+  title={SpatialGeo: Boosting Spatial Reasoning in Multimodal LLMs via Geometry-Semantics Fusion},
+  author={Guo, Jiajie and Zhu, Qingpeng and Zeng, Jin and Wu, Xiaolong and He, Changyong and Wang, Weida},
+  booktitle={27th IEEE International Workshop on Multimedia Signal Processing},
+  pages={1--6},
+  year={2025},
+  organization={IEEE}
+}
+```
