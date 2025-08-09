@@ -123,11 +123,11 @@ Download annotations and images from the following link (https://huggingface.co/
 
 ### Stage-2
 The training script is SpatialGeo/scripts/v1_5/finetunemoge.sh
-Please download the annotation of the final mixture our instruction tuning data [llava_v1_5_mix665k.json](https://huggingface.co/datasets/liuhaotian/LLaVA-Instruct-150K/blob/main/llava_v1_5_mix665k.json), and download the images from constituting datasets:
+Please download the annotation of the final mixture our instruction tuning data [llava_v1_5_mix665k.json](https://huggingface.co/datasets/Ricky159/SpatialGeo), and download the images from constituting datasets:
 
 - COCO: [train2017](http://images.cocodataset.org/zips/train2017.zip)
 - VisualGenome: [part1](https://cs.stanford.edu/people/rak248/VG_100K_2/images.zip)
-Please download the original image from [OpenImagesV4] (https://storage.googleapis.com/openimages/web/download_v4.html) based on llava-v1_5_mix665k.json.
+- Please download the original image from [OpenImagesV4] (https://storage.googleapis.com/openimages/web/download_v4.html) based on llava_v1_5_mix665k.json.
 
 ## Inferencing
 Run the following command to inference a single image:
