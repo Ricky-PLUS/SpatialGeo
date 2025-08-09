@@ -140,7 +140,7 @@ python -m llava.serve.cli \
 
 ## Evaluation
 
-You can find some evaluation benchmark tests in the SpatialGeo/lava/eval folder.
+You can find some evaluation benchmark tests in the SpatialGeo/llava/eval folder.
 Most of the testing processes are consistent with LLaVA1.5
 
 ### Reference
