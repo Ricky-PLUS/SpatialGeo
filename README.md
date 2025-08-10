@@ -27,20 +27,16 @@ pip install -e ".[train]"
 pip install flash-attn --no-build-isolation
 ```
 
-## Train
-SpatialGeo training consists of two stages: (1) feature alignment stage; (2) visual instruction tuning stage. SpatialGeo is trained on 8 A800 GPUs with 80GB memory.
+## Pretrained Model
+Our pretrained models are available on the huggingface hub:
 
-### Stage-1
-The training script is SpatialGeo/scripts/v1_5/pretrainmoge.sh
-Download annotations and images from the following link (https://huggingface.co/datasets/liuhaotian/LLaVA-Pretrain/tree/main).
+(https://huggingface.co/Ricky159/SpatialGeo)
 
-### Stage-2
-The training script is SpatialGeo/scripts/v1_5/finetunemoge.sh
-Please download the annotation of the final mixture our instruction tuning data [llava_v1_5_mix665k.json](https://huggingface.co/datasets/Ricky159/SpatialGeo), and download the images from constituting datasets:
+You should put vit_model.pt in folder spatialMoge/llava/model/dino_moge, and modify the model path in /llava/model/dino_moge/model/moge_model.py
 
-- COCO: [train2017](http://images.cocodataset.org/zips/train2017.zip)
-- VisualGenome: [part1](https://cs.stanford.edu/people/rak248/VG_100K_2/images.zip)
-- Please download the original image from [OpenImagesV4] (https://storage.googleapis.com/openimages/web/download_v4.html) based on llava_v1_5_mix665k.json.
+Put all files in the compressed folder except for vit_model.pt into one folder, and you need to download [liuhaotian/llava-v1.5-7b](https://huggingface.co/liuhaotian/llava-v1.5-7b).
+
+Finally, run the spatialMoge/scripts/merge_lora_weights.py and merge them to obtain the final model, this process can refer to [LLaVA 1.5](https://github.com/haotian-liu/LLaVA).
 
 ## Inferencing
 Run the following command to inference a single image:
@@ -57,11 +53,25 @@ Here are some examples of inferencing:
 </p>
 <br>  <!-- 增加一个空行 -->
 
-
 ## Evaluation
 
 You can find some evaluation benchmark tests in the SpatialGeo/llava/eval folder.
 Most of the testing processes are consistent with LLaVA1.5
+
+## Train
+SpatialGeo training consists of two stages: (1) feature alignment stage; (2) visual instruction tuning stage. SpatialGeo is trained on 8 A800 GPUs with 80GB memory.
+
+### Stage-1
+The training script is SpatialGeo/scripts/v1_5/pretrainmoge.sh
+Download annotations and images from the following link (https://huggingface.co/datasets/liuhaotian/LLaVA-Pretrain/tree/main).
+
+### Stage-2
+The training script is SpatialGeo/scripts/v1_5/finetunemoge.sh
+Please download the annotation of the final mixture our instruction tuning data [llava_v1_5_mix665k.json](https://huggingface.co/datasets/Ricky159/SpatialGeo), and download the images from constituting datasets:
+
+- COCO: [train2017](http://images.cocodataset.org/zips/train2017.zip)
+- VisualGenome: [part1](https://cs.stanford.edu/people/rak248/VG_100K_2/images.zip)
+- Please download the original image from [OpenImagesV4] (https://storage.googleapis.com/openimages/web/download_v4.html) based on llava_v1_5_mix665k.json.
 
 ## Related Projects
 
