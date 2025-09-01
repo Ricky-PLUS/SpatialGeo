@@ -7,6 +7,7 @@ ______________________________________________________________________
 
 ## Install
 Run LLaVA on Linux.
+
 1. Clone this repository and navigate to LLaVA folder
 ```bash
 git clone https://github.com/Ricky-PLUS/SpatialGeo.git
@@ -84,7 +85,6 @@ If you find this repository useful for your research, please cite the following 
   title={SpatialGeo: Boosting Spatial Reasoning in Multimodal LLMs via Geometry-Semantics Fusion},
   author={Guo, Jiajie and Zhu, Qingpeng and Zeng, Jin and Wu, Xiaolong and He, Changyong and Wang, Weida},
   booktitle={27th IEEE International Workshop on Multimedia Signal Processing},
-  pages={1--6},
   year={2025},
   organization={IEEE}
 }
